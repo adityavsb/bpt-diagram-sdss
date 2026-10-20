@@ -9,8 +9,11 @@ import numpy as np
 
 def kauffmann_boundary(log_nii_ha):
     """
-    Kauffmann et al. (2003) empirical star-formation limit.
-    Valid for log([N II] / Hα) < 0.05.
+    Kauffmann et al. (2003, MNRAS, 346, 1055, Eq. 1) empirical star-formation limit:
+        log([O III] / Hβ) = 0.61 / (log([N II] / Hα) - 0.05) + 1.30
+    
+    Valid for log([N II] / Hα) < 0.05. Galaxies below this line are purely
+    star-forming (photoionized by massive OB stars).
     Returns NaN for x >= 0.05.
     """
     x = np.asarray(log_nii_ha)
@@ -21,8 +24,11 @@ def kauffmann_boundary(log_nii_ha):
 
 def kewley_boundary(log_nii_ha):
     """
-    Kewley et al. (2001) extreme starburst theoretical limit.
-    Valid for log([N II] / Hα) < 0.47.
+    Kewley et al. (2001, ApJ, 556, 121, Eq. 5) extreme starburst theoretical limit:
+        log([O III] / Hβ) = 0.61 / (log([N II] / Hα) - 0.47) + 1.19
+    
+    Valid for log([N II] / Hα) < 0.47. Represents the maximum energy contribution
+    achievable by stellar photoionization alone without black hole accretion or shocks.
     Returns NaN for x >= 0.47.
     """
     x = np.asarray(log_nii_ha)
@@ -33,9 +39,9 @@ def kewley_boundary(log_nii_ha):
 
 def seyfert_liner_boundary(log_nii_ha):
     """
-    Kewley et al. (2006) demarcation separating high-ionization Seyferts
-    from low-ionization LINERs on the AGN wing.
-    log([O III] / Hβ) = 1.89 * log([N II] / Hα) + 0.76
+    Kewley et al. (2006, MNRAS, 372, 961, Eq. 1) demarcation separating
+    high-ionization Seyfert nuclei from low-ionization LINERs:
+        log([O III] / Hβ) = 1.89 * log([N II] / Hα) + 0.76
     """
     x = np.asarray(log_nii_ha)
     return 1.89 * x + 0.76

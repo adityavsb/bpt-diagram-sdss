@@ -17,3 +17,47 @@ keywords:
   - galaxies
   - active-galactic-nuclei
 license: "MIT"
+references:
+  - type: article
+    authors:
+      - family-names: "Kauffmann"
+        given-names: "Guinevere"
+      - family-names: "Heckman"
+        given-names: "Timothy M."
+    title: "The host galaxies of active galactic nuclei"
+    journal: "Monthly Notices of the Royal Astronomical Society"
+    year: 2003
+    volume: 346
+    issue: 4
+    start: 1055
+    end: 1077
+    doi: "10.1111/j.1365-2966.2003.07154.x"
+  - type: article
+    authors:
+      - family-names: "Kewley"
+        given-names: "L. J."
+      - family-names: "Dopita"
+        given-names: "M. A."
+    title: "Theoretical Modeling of Starburst Galaxies"
+    journal: "The Astrophysical Journal"
+    year: 2001
+    volume: 556
+    issue: 1
+    start: 121
+    end: 140
+    doi: "10.1086/321545"
+  - type: article
+    authors:
+      - family-names: "Baldwin"
+        given-names: "J. A."
+      - family-names: "Phillips"
+        given-names: "M. M."
+      - family-names: "Terlevich"
+        given-names: "R."
+    title: "Classification parameters for the emission-line spectra of extragalactic objects"
+    journal: "Publications of the Astronomical Society of the Pacific"
+    year: 1981
+    volume: 93
+    start: 5
+    end: 19
+    doi: "10.1086/130766"
