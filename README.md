@@ -89,6 +89,8 @@ To anchor the catalog statistics to real objects you can see in the sky:
 bpt-diagram-sdss/
 ├── README.md               # Scientific documentation & observational results
 ├── PLAN.md                 # Technical architecture & astrophysics plan
+├── CITATION.cff            # Citation metadata for academic and open-source citing
+├── REFERENCES.bib          # NASA/ADS BibTeX database for LaTeX / paper references
 ├── LICENSE                 # MIT License
 ├── .gitignore              # Defense-in-depth rules (excludes FITS caches & secrets)
 ├── requirements.txt        # astropy, astroquery, pandas, matplotlib, numpy
@@ -129,6 +131,38 @@ python run_bpt.py
 
 ---
 
-## License
+## Scientific References & Literature Attribution
 
-This project is open-source and available under the [MIT License](LICENSE).
+This project directly implements analytical boundaries and datasets established in the following landmark papers:
+
+1. **The BPT Diagnostic Foundation:**  
+   Baldwin, J. A., Phillips, M. M., & Terlevich, R. (1981). *Classification parameters for the emission-line spectra of extragalactic objects.* **PASP**, 93, 5–19. [DOI: 10.1086/130766](https://doi.org/10.1086/130766)
+2. **Empirical Star-Formation Demarcation:**  
+   Kauffmann, G., Heckman, T. M., Tremonti, C., et al. (2003). *The host galaxies of active galactic nuclei.* **MNRAS**, 346(4), 1055–1077. [DOI: 10.1111/j.1365-2966.2003.07154.x](https://doi.org/10.1111/j.1365-2966.2003.07154.x)
+3. **Extreme Starburst Theoretical Limit:**  
+   Kewley, L. J., Dopita, M. A., Sutherland, R. S., et al. (2001). *Theoretical Modeling of Starburst Galaxies.* **ApJ**, 556(1), 121–140. [DOI: 10.1086/321545](https://doi.org/10.1086/321545)
+4. **Seyfert vs. LINER Optical Classification:**  
+   Kewley, L. J., Groves, B., Kauffmann, G., & Heckman, T. (2006). *The host galaxies and classification of active galactic nuclei.* **MNRAS**, 372(3), 961–976. [DOI: 10.1111/j.1365-2966.2006.10869.x](https://doi.org/10.1111/j.1365-2966.2006.10869.x)
+5. **MPA-JHU Emission-Line Measurements:**  
+   Brinchmann, J., Charlot, S., White, S. D. M., et al. (2004). *The physical properties of star-forming galaxies in the low-redshift Universe.* **MNRAS**, 351(4), 1151–1179. [DOI: 10.1111/j.1365-2966.2004.07881.x](https://doi.org/10.1111/j.1365-2966.2004.07881.x)
+6. **SDSS-IV Data Release 17:**  
+   Abdurro'uf, Accetta, K., Aerts, C., et al. (2022). *The Seventeenth Data Release of the Sloan Digital Sky Surveys: Complete Results from SDSS-IV.* **ApJS**, 259(2), 35. [DOI: 10.3847/1538-4365/ac4414](https://doi.org/10.3847/1538-4365/ac4414)
+
+Full BibTeX records are available in [`REFERENCES.bib`](REFERENCES.bib).
+
+---
+
+## Data Rights & SDSS Acknowledgement
+
+This project uses public data from the **Sloan Digital Sky Survey IV (SDSS-IV)**. 
+
+> *Funding for the Sloan Digital Sky Survey IV has been provided by the Alfred P. Sloan Foundation, the U.S. Department of Energy Office of Science, and the Participating Institutions. SDSS-IV acknowledges support and resources from the Center for High-Performance Computing at the University of Utah. The SDSS web site is [www.sdss.org](https://www.sdss.org).*
+>
+> *SDSS-IV is managed by the Astrophysical Research Consortium for the Participating Institutions of the SDSS Collaboration.*
+
+---
+
+## License & Citation
+
+* **Code License:** [MIT License](LICENSE) © 2026 Aditya Bhadoria.
+* **Citation:** If you use this repository for educational or research workflows, please cite using GitHub's **"Cite this repository"** button or via [`CITATION.cff`](CITATION.cff).

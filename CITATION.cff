@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software or diagnostic pipeline in your research or educational materials, please cite it as below."
+authors:
+  - family-names: "Bhadoria"
+    given-names: "Aditya"
+    orcid: ""
+title: "bpt-diagram-sdss: Emission-Line Classification of Star-Forming Galaxies and AGN"
+version: 1.0.0
+date-released: 2026-10-20
+url: "https://github.com/adityavsb/bpt-diagram-sdss"
+keywords:
+  - astronomy
+  - astrophysics
+  - bpt-diagram
+  - sdss
+  - spectroscopy
+  - galaxies
+  - active-galactic-nuclei
+license: "MIT"
