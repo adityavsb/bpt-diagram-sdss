@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software or diagnostic pipeline in your research or educational materials, please cite it as below."
+message: "This repository is an educational reproduction and software pipeline. Please primarily cite the original scientific papers (Baldwin et al. 1981, Kauffmann et al. 2003, Kewley et al. 2001, SDSS DR17) listed in REFERENCES.bib. If you specifically adapt or reuse this software implementation, you may cite it as below."
 authors:
   - family-names: "Bhadoria"
     given-names: "Aditya"

@@ -162,7 +162,8 @@ This project uses public data from the **Sloan Digital Sky Survey IV (SDSS-IV)**
 
 ---
 
-## License & Citation
+## License & Academic Attribution Policy
 
 * **Code License:** [MIT License](LICENSE) © 2026 Aditya Bhadoria.
-* **Citation:** If you use this repository for educational or research workflows, please cite using GitHub's **"Cite this repository"** button or via [`CITATION.cff`](CITATION.cff).
+* **Primary Scientific Attribution (Mandatory):** This repository is an educational reproduction and open-source demonstration. Any scientific publication, paper, or research work utilizing the BPT diagnostic, classification boundaries, or SDSS catalog **must primarily cite the original literature** listed in [Scientific References](#scientific-references--literature-attribution) and [`REFERENCES.bib`](REFERENCES.bib) (Baldwin et al. 1981; Kauffmann et al. 2003; Kewley et al. 2001, 2006; Brinchmann et al. 2004; Abdurro'uf et al. 2022).
+* **Software Implementation Citation (Optional):** If you specifically adapt or reuse this Python pipeline, code structure, or plotting workflow in an educational tutorial, university lab, or coding demo, you may additionally cite the software repository via [`CITATION.cff`](CITATION.cff) or GitHub's **"Cite this repository"** button.
