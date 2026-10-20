@@ -1,0 +1,44 @@
+# Byte-compiled / Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Astronomical data downloads & caches
+data/
+*.fits
+*.fit
+*.csv
+*.parquet
+*.h5
+*.tar.gz
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE / Editor configs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Defense-in-depth: Secret keys & credentials
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.cert
+id_*
+credentials.json
+token.json
