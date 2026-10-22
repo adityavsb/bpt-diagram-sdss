@@ -36,23 +36,28 @@ The BPT diagram relies on two optical emission line flux ratios:
 
 ```mermaid
 flowchart TD
-    I1["Iteration 1: The Core BPT Diagram<br/>(SDSS ~10k galaxies + M51 & NGC 1068 anchors)"] --> I2["Iteration 2: The Two Wings of AGN<br/>(Seyferts vs. LINERs using [S II] diagnostic)"]
-    I2 --> I3["Iteration 3: Physical Correlates<br/>(Stellar mass, redshift & visual Legacy Survey cutouts)"]
+    I1["Iteration 1: The Core BPT Diagram<br/>(SDSS ~10k galaxies + M51 & NGC 1068 anchors) [COMPLETED]"] --> I2["Iteration 2: Tri-Algorithmic Anomaly Detection<br/>(iForest, LOF, PCA + Glitch Disentanglement & 95% CIs) [COMPLETED]"]
+    I2 --> I3["Iteration 3: Multi-Line Extension & Morphological Cutouts<br/>([S II]/[O I] BPTs, stellar masses, DESI Legacy cutouts)"]
 ```
 
-### Iteration 1: The Core BPT Diagnostic
+### Iteration 1: The Core BPT Diagnostic [Completed]
 * Query SDSS DR17 / MPA-JHU catalog for $\sim 10,000$ galaxies with $0.02 < z < 0.25$.
 * Enforce line signal-to-noise quality cut ($S/N \ge 3$ on $\text{H}\alpha, \text{H}\beta, [\text{N II}], [\text{O III}]$).
 * Plot 2D density/hexbin distribution showing the characteristic two-pronged "seagull" wings.
 * Overlay anchor galaxies: **M51** (Star-Forming) and **NGC 1068** (Seyfert AGN).
 
-### Iteration 2: Seyfert vs. LINER Classification ($[\text{S II}]$ BPT)
-* Incorporate $[\text{S II}]\,\lambda\lambda 6717,6731$ lines.
-* Implement the Kewley et al. (2006) demarcation separating high-ionization Seyferts (active black holes) from low-ionization LINERs (shocks / old stellar populations).
+### Iteration 2: Tri-Algorithmic Anomaly Detection & Glitch Disentanglement [Completed]
+* **Tri-Ensemble:** Isolation Forest + Local Outlier Factor ($k=35$) + PCA Reconstruction Residuals.
+* **Equal-Weighted Voting:** Calibrated percentile ranks ($0\text{--}100$) + consensus score + algorithm votes ($3/3, 2/3$).
+* **Glitch Disentanglement:** Analytical Gaussian error propagation for $\sigma_{\log([\mathrm{N\ II}]/\mathrm{H}\alpha)}$ and $\sigma_{\log([\mathrm{O\ III}]/\mathrm{H}\beta)}$, $95\%$ Confidence Interval ellipses.
+* **Scores:** Scaled `pipeline_glitch_risk` ($0\text{--}100$) and `physical_anomaly_confidence` ($0\text{--}100$).
+* **Candidate Catalog:** Top 20 ranked physical celestial anomalies exported to `data/sdss_anomaly_candidates.csv` with SDSS SkyServer and DESI Legacy Survey links.
+* **Figure:** `assets/bpt_anomalies_sdss.png` displaying 95% CI error ellipses distinguishing real anomalies from wide-jitter glitches.
 
 ### Iteration 3: Physical Correlates & Visual Cutouts
-* Color-code the distribution by galaxy stellar mass ($M_*$) and redshift ($z$).
-* Retrieve direct multi-band optical image cutouts from the **DESI Legacy Imaging Surveys** for representative galaxies in each quadrant.
+* Incorporate $[\text{S II}]\,\lambda\lambda 6717,6731$ and $[\text{O I}]\,\lambda 6300$ line diagnostics.
+* Color-code distribution by galaxy stellar mass ($M_*$) and redshift ($z$).
+* Retrieve direct multi-band optical image cutouts from the **DESI Legacy Imaging Surveys** for top candidate systems.
 
 ---
 

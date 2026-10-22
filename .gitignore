@@ -5,13 +5,15 @@ __pycache__/
 *.so
 
 # Astronomical data downloads & caches
-data/
+data/*
+!data/sdss_anomaly_candidates.csv
 *.fits
 *.fit
 *.csv
 *.parquet
 *.h5
 *.tar.gz
+!data/sdss_anomaly_candidates.csv
 
 # Virtual environments
 .venv/
