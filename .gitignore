@@ -43,4 +43,9 @@ env/
 *.cert
 id_*
 credentials.json
+
+# Private scratchpads & publishing plans (local only)
+PUBLISHING_STRATEGY.md
+notes/
+*.local.md
 token.json
