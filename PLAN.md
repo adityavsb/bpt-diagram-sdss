@@ -15,16 +15,20 @@ The scientific goal is to classify galaxies based on the physical source of thei
 ## 2. Astrophysics & Mathematical Foundations
 
 The BPT diagram relies on two optical emission line flux ratios:
-* **$y$-axis:** $\log_{10}([\text{O III}]\,\lambda 5007 / \text{H}\beta)$ — tracks the ionization parameter and radiation hardness.
-* **$x$-axis:** $\log_{10}([\text{N II}]\,\lambda 6584 / \text{H}\alpha)$ — tracks gas metallicity and nitrogen abundance.
+* **y-axis:** **log₁₀([O III] λ5007 / Hβ)** — tracks the ionization parameter and radiation hardness.
+* **x-axis:** **log₁₀([N II] λ6584 / Hα)** — tracks gas metallicity and nitrogen abundance.
 
 ### Demarcation Boundaries
 1. **Kauffmann et al. (2003) Empirical Star-Formation Line:**
-   $$\log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = \frac{0.61}{\log_{10}([\text{N II}]/\text{H}\alpha) - 0.05} + 1.30$$
+   ```text
+   log₁₀([O III] / Hβ) = 0.61 / (log₁₀([N II] / Hα) - 0.05) + 1.30
+   ```
    Galaxies below this curve are cleanly star-forming.
 
 2. **Kewley et al. (2001) Theoretical Extreme Starburst Upper Limit:**
-   $$\log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = \frac{0.61}{\log_{10}([\text{N II}]/\text{H}\alpha) - 0.47} + 1.19$$
+   ```text
+   log₁₀([O III] / Hβ) = 0.61 / (log₁₀([N II] / Hα) - 0.47) + 1.19
+   ```
    Galaxies above this curve cannot be explained by starbursts alone; they require supermassive black hole accretion (AGN).
 
 3. **Composite Transition Region:**
@@ -47,10 +51,10 @@ flowchart TD
 * Overlay anchor galaxies: **M51** (Star-Forming) and **NGC 1068** (Seyfert AGN).
 
 ### Iteration 2: Tri-Algorithmic Anomaly Detection & Glitch Disentanglement [Completed]
-* **Tri-Ensemble:** Isolation Forest + Local Outlier Factor ($k=35$) + PCA Reconstruction Residuals.
-* **Equal-Weighted Voting:** Calibrated percentile ranks ($0\text{--}100$) + consensus score + algorithm votes ($3/3, 2/3$).
-* **Glitch Disentanglement:** Analytical Gaussian error propagation for $\sigma_{\log([\mathrm{N\ II}]/\mathrm{H}\alpha)}$ and $\sigma_{\log([\mathrm{O\ III}]/\mathrm{H}\beta)}$, $95\%$ Confidence Interval ellipses.
-* **Scores:** Scaled `pipeline_glitch_risk` ($0\text{--}100$) and `physical_anomaly_confidence` ($0\text{--}100$).
+* **Tri-Ensemble:** Isolation Forest + Local Outlier Factor (k=35) + PCA Reconstruction Residuals.
+* **Equal-Weighted Voting:** Calibrated percentile ranks (0–100) + consensus score + algorithm votes (3/3, 2/3).
+* **Glitch Disentanglement:** Analytical Gaussian error propagation for σ_log([N II]/Hα) and σ_log([O III]/Hβ), 95% Confidence Interval ellipses.
+* **Scores:** Scaled `pipeline_glitch_risk` (0–100) and `physical_anomaly_confidence` (0–100).
 * **Candidate Catalog:** Top 20 ranked physical celestial anomalies exported to `data/sdss_anomaly_candidates.csv` with SDSS SkyServer and DESI Legacy Survey links.
 * **Figure:** `assets/bpt_anomalies_sdss.png` displaying 95% CI error ellipses distinguishing real anomalies from wide-jitter glitches.
 
