@@ -17,24 +17,24 @@ The project investigates a fundamental question in extragalactic astronomy:
 
 When high-energy radiation strikes interstellar gas, atoms ionize and recombine, emitting photons at discrete spectral wavelengths. By taking the logarithmic ratio of specific forbidden collision lines to hydrogen recombination lines, we construct an excitation diagnostic that is independent of distance or dust reddening:
 
-* **y-axis:** **log₁₀([O III] λ5007 / Hβ)** — tracks the ionization parameter and radiation hardness of the ionizing field.
-* **x-axis:** **log₁₀([N II] λ6584 / Hα)** — tracks gas-phase metallicity and nitrogen abundance.
+* **y-axis:** $\log_{10}([\text{O III}]\,\lambda 5007 / \text{H}\beta)$ — tracks the ionization parameter and radiation hardness of the ionizing field.
+* **x-axis:** $\log_{10}([\text{N II}]\,\lambda 6584 / \text{H}\alpha)$ — tracks gas-phase metallicity and nitrogen abundance.
 
 ```text
-               High [O III] / Hβ  (Hard Ionizing Photons)
-                         ▲
-                         │       ▲
-                         │      /   AGN Wing (Seyferts)
-                         │     /    [Hard power-law accretion]
-                         │    /
-                         │   /      ▲
-                         │  /      /   LINERs (Shocks / Old Stars)
-       Star-Forming      │ /      /
+               High [O III] / H-beta  (Hard Ionizing Photons)
+                         ^
+                         |       ^
+                         |      /   AGN Wing (Seyferts)
+                         |     /    [Hard power-law accretion]
+                         |    /
+                         |   /      ^
+                         |  /      /   LINERs (Shocks / Old Stars)
+       Star-Forming      | /      /
        (OB Star Nurseries)
-                         │
-                         ▼
-        Low [N II] / Hα ◄─────────────────► High [N II] / Hα
-                                          (High Metallicity)
+                         |
+                         v
+        Low [N II] / H-alpha <-------------------> High [N II] / H-alpha
+                                           (High Metallicity)
 ```
 
 ---
@@ -44,28 +44,34 @@ When high-energy radiation strikes interstellar gas, atoms ionize and recombine,
 We implement the standard theoretical and empirical classification curves from the literature:
 
 1. **Kauffmann et al. (2003) Pure Star-Formation Limit:**
-   ```text
-   log₁₀([O III] / Hβ) = 0.61 / (log₁₀([N II] / Hα) - 0.05) + 1.30   (for log([N II]/Hα) < 0.05)
-   ```
+
+$$
+\log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = \frac{0.61}{\log_{10}([\text{N II}]/\text{H}\alpha) - 0.05} + 1.30 \quad (\text{for } x < 0.05)
+$$
+
    Galaxies below this dashed curve are powered solely by young massive OB stars (< 10 Myr).
 
 2. **Kewley et al. (2001) Extreme Starburst Theoretical Limit:**
-   ```text
-   log₁₀([O III] / Hβ) = 0.61 / (log₁₀([N II] / Hα) - 0.47) + 1.19   (for log([N II]/Hα) < 0.47)
-   ```
+
+$$
+\log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = \frac{0.61}{\log_{10}([\text{N II}]/\text{H}\alpha) - 0.47} + 1.19 \quad (\text{for } x < 0.47)
+$$
+
    Galaxies above this solid curve cannot be ionized by starbursts alone, requiring an Active Galactic Nucleus (AGN).
 
 3. **Kewley et al. (2006) Seyfert vs. LINER Demarcation:**
-   ```text
-   log₁₀([O III] / Hβ) = 1.89 · log₁₀([N II] / Hα) + 0.76
-   ```
+
+$$
+\log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = 1.89 \log_{10}\left(\frac{[\text{N II}]}{\text{H}\alpha}\right) + 0.76
+$$
+
    Separates high-ionization Seyferts (active black holes) from low-ionization LINERs.
 
 ---
 
 ## Observational Results (9,999 SDSS DR17 Galaxies)
 
-Filtered for validated spectroscopic galaxies (redshift 0.02 < z < 0.25) with Signal-to-Noise S/N ≥ 3 across all 4 diagnostic emission lines:
+Filtered for validated spectroscopic galaxies (redshift $0.02 < z < 0.25$) with Signal-to-Noise $S/N \ge 3$ across all 4 diagnostic emission lines:
 
 | Classification | Galaxy Count | Population % | Dominant Physical Mechanism |
 | :--- | :---: | :---: | :--- |
@@ -82,11 +88,10 @@ Filtered for validated spectroscopic galaxies (redshift 0.02 < z < 0.25) with Si
 
 To anchor the catalog statistics to real objects you can see in the sky:
 
-| Anchor Galaxy | Type | log₁₀([N II]/Hα) | log₁₀([O III]/Hβ) | Diagnostic Position |
+| Anchor Galaxy | Type | log([N II]/H-alpha) | log([O III]/H-beta) | Diagnostic Position |
 | :--- | :--- | :---: | :---: | :--- |
 | **M51 (Whirlpool Galaxy)** | Star-Forming Spiral | `-0.42` | `-0.38` | Deep in the lower-left starburst locus. Its glow is driven by massive young stars. |
 | **NGC 1068 (M77)** | Seyfert 2 Active Nucleus | `+0.15` | `+0.95` | Prominently in the upper-right AGN wing. Its emission lines require an accreting supermassive black hole. |
-
 
 ---
 
@@ -94,25 +99,32 @@ To anchor the catalog statistics to real objects you can see in the sky:
 
 ```text
 bpt-diagram-sdss/
-├── README.md               # Scientific documentation & observational results
-├── PLAN.md                 # Technical architecture & astrophysics plan
-├── CITATION.cff            # Citation metadata for academic and open-source citing
-├── REFERENCES.bib          # NASA/ADS BibTeX database for LaTeX / paper references
-├── LICENSE                 # MIT License
-├── .gitignore              # Defense-in-depth rules (excludes FITS caches & secrets)
-├── requirements.txt        # astropy, astroquery, pandas, matplotlib, numpy
-├── src/
-│   ├── bpt_math.py         # Boundary equations (Kauffmann 2003, Kewley 2001/2006)
-│   ├── query_data.py       # SDSS DR17 query & local caching with quality cuts
-│   ├── plot_bpt.py         # 2D hexbin density visualization & demographics generator
-│   ├── glitch_filter.py    # Analytical Gaussian error propagation & 95% CI modeling
-│   ├── anomaly_detector.py # Tri-algorithmic ensemble (iForest + LOF + PCA) & voting
-│   └── plot_anomalies.py   # Publication-quality anomaly diagnostic map
-├── assets/
-│   ├── bpt_diagnostic_sdss.png # Classical BPT diagram
-│   └── bpt_anomalies_sdss.png  # Anomaly detection & 95% CI error ellipses
-├── data/
-�## Iteration 2: Tri-Algorithmic Celestial Anomaly Detection & Glitch Disentanglement
++-- README.md               # Scientific documentation & observational results
++-- PLAN.md                 # Technical architecture & astrophysics plan
++-- CITATION.cff            # Citation metadata for academic and open-source citing
++-- REFERENCES.bib          # NASA/ADS BibTeX database for LaTeX / paper references
++-- LICENSE                 # MIT License
++-- .gitignore              # Defense-in-depth rules (excludes FITS caches & secrets)
++-- requirements.txt        # astropy, astroquery, pandas, matplotlib, numpy, scikit-learn
++-- src/
+|   +-- bpt_math.py         # Boundary equations (Kauffmann 2003, Kewley 2001/2006)
+|   +-- query_data.py       # SDSS DR17 query & local caching with quality cuts
+|   +-- plot_bpt.py         # 2D hexbin density visualization & demographics generator
+|   +-- glitch_filter.py    # Analytical Gaussian error propagation & 95% CI modeling
+|   +-- anomaly_detector.py # Tri-algorithmic ensemble (iForest + LOF + PCA) & voting
+|   \-- plot_anomalies.py   # Publication-quality anomaly diagnostic map
++-- assets/
+|   +-- bpt_diagnostic_sdss.png # Classical BPT diagram
+|   \-- bpt_anomalies_sdss.png  # Anomaly detection & 95% CI error ellipses
++-- data/
+|   +-- sdss_bpt_sample.csv          # Cached 9,999 SDSS DR17 galaxies
+|   \-- sdss_anomaly_candidates.csv  # Ranked Top 20 physical celestial candidates
+\-- run_bpt.py              # Master pipeline runner (Classical BPT + Anomaly Discovery)
+```
+
+---
+
+## Iteration 2: Tri-Algorithmic Celestial Anomaly Detection & Glitch Disentanglement
 
 While classical demarcation curves partition galaxies into deterministic boxes (*Star-Forming, Composite, Seyfert, LINER*), real-world survey astronomy makes breakthrough discoveries (e.g. **Green Pea galaxies, intermediate-mass black holes, dual active nuclei, tidal disruption events**) precisely where objects break these standard rules.
 
@@ -127,10 +139,11 @@ To eliminate single-algorithm bias, we employ an equal-weighted consensus ensemb
 2. **Local Outlier Factor (`LOF`, k=35)**: Density-ratio metric that uncovers objects lingering in the low-density "composite desert" between the starburst locus and the AGN plume.
 3. **PCA Reconstruction Residuals (`PCA-Rec`)**: Projects the multi-line emission space onto principal components; galaxies with high L2 reconstruction error exhibit unusual ionization physics unexplained by standard stellar/AGN models.
 
-Each raw score is calibrated to a percentile scale (0–100). The **Consensus Anomaly Score** is their equal-weighted average:
-```text
-Consensus Anomaly Score = (1/3) · Score_iForest + (1/3) · Score_LOF + (1/3) · Score_PCA
-```
+Each raw score is calibrated to a percentile scale ($0\text{--}100$). The **Consensus Anomaly Score** is their equal-weighted average:
+
+$$
+S_{\text{consensus}} = \frac{1}{3} S_{\text{iForest}} + \frac{1}{3} S_{\text{LOF}} + \frac{1}{3} S_{\text{PCA}}
+$$
 
 ### 2. Disentangling Physical Anomalies vs. Pipeline Glitches
 
@@ -138,22 +151,25 @@ In survey astronomy, the raw top outliers of any unsupervised algorithm are ofte
 
 To ensure candidates are scientifically genuine, we implement:
 * **Analytical Gaussian Error Propagation:**
-  ```text
-  σ_x = (1 / ln 10) · sqrt( (σ_NII / NII)² + (σ_Hα / Hα)² )
-  σ_y = (1 / ln 10) · sqrt( (σ_OIII / OIII)² + (σ_Hβ / Hβ)² )
-  ```
+
+$$
+\sigma_x = \frac{1}{\ln 10} \sqrt{\left(\frac{\sigma_{[\text{N II}]}}{[\text{N II}]}\right)^2 + \left(\frac{\sigma_{\text{H}\alpha}}{\text{H}\alpha}\right)^2}, \quad \sigma_y = \frac{1}{\ln 10} \sqrt{\left(\frac{\sigma_{[\text{O III}]}}{[\text{O III}]}\right)^2 + \left(\frac{\sigma_{\text{H}\beta}}{\text{H}\beta}\right)^2}
+$$
+
 * **95% Confidence Interval Ellipses:**
-  ```text
-  95% CI Range = [ x ± 1.96 · σ_x,  y ± 1.96 · σ_y ]
-  ```
-* **`pipeline_glitch_risk` (0–100%):** Flags objects whose outlier status is fragile to measurement noise (S/N approaching 3.0 or giant error ellipse area).
-* **`physical_anomaly_confidence` (0–100%):** Confirms high ML consensus backed by high signal-to-noise (S/N >> 10), compact error ellipses, and statistical detachment (>3σ) from standard tracks.
+
+$$
+\text{CI}_{95\%} = [x \pm 1.96 \sigma_x, \; y \pm 1.96 \sigma_y]
+$$
+
+* **`pipeline_glitch_risk` ($0\text{--}100\%$):** Flags objects whose outlier status is fragile to measurement noise ($S/N \to 3.0$ or giant error ellipse area).
+* **`physical_anomaly_confidence` ($0\text{--}100\%$):** Confirms high ML consensus backed by high signal-to-noise ($S/N \gg 10$), compact error ellipses, and statistical detachment ($>3\sigma$) from standard tracks.
 
 ### 3. Top Confirmed Physical Celestial Candidates
 
-Filtered for validated low glitch risk (`pipeline_glitch_risk` ≤ 0.5%, min S/N ≥ 40), the top candidates exhibit undeniable physical oddities:
+Filtered for validated low glitch risk (`pipeline_glitch_risk` <= 0.5%, min S/N >= 40), the top candidates exhibit undeniable physical oddities:
 
-| Rank | SpecObjID | z | log₁₀([N II]/Hα) | log₁₀([O III]/Hβ) | 95% CI Range | Consensus Score | Phys. Conf. | Physical Archetype | Optical Sky Links |
+| Rank | SpecObjID | z | log([N II]/H-alpha) | log([O III]/H-beta) | 95% CI Range | Consensus Score | Phys. Conf. | Physical Archetype | Optical Sky Links |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- | :--- |
 | **#1** | `315265744856180736` | `0.029` | `-0.10` | `+0.84` | `[-0.11, -0.09]`, `[+0.82, +0.86]` | `99.2` | **`99.0%`** | Unconventional Emission Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=315265744856180736) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=171.03603&dec=-1.15776&layer=ls-dr10&zoom=15) |
 | **#2** | `350255779153995776` | `0.061` | `-0.17` | `+1.13` | `[-0.18, -0.16]`, `[+1.11, +1.14]` | `99.4` | **`99.0%`** | Ultra-High Ionization Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=350255779153995776) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=226.97660&dec=1.13799&layer=ls-dr10&zoom=15) |
@@ -173,65 +189,65 @@ To empirically ground our machine learning discoveries, we cross-matched the Top
 Remarkably, without any prior training labels, coordinates, or morphology inputs, the unsupervised algorithm independently selected systems that astrophysicists have singled out for major targeted research:
 
 ```text
-┌───────┬─────────────────────────┬─────────┬──────────────┬──────────────────────────────────────────────────────┐
-│ Rank  │ Primary Catalog Name    │ Redshift│ NED Citations│ What Observational Astrophysics Discovered           │
-├───────┼─────────────────────────┼─────────┼──────────────┼──────────────────────────────────────────────────────┤
-│  #1   │ CGCG 011-088 (Z 11-88)  │ z=0.029 │ 53 papers    │ Dual resonance ring galaxy with nuclear rejuvenation │
-│  #2   │ SDSS J150754.38+010816.7│ z=0.061 │ 42 papers    │ Intermediate-Mass Black Hole candidate (1.4×10⁶ M_☉) │
-│  #3   │ SDSS J101653.82+002857.0│ z=0.116 │ 38 papers    │ High-Excitation Radio Quasar in HST Feedback Survey  │
-│  #4   │ CGCG 021-096 (IRAS)     │ z=0.051 │ 59 papers    │ Luminous Infrared Galaxy (LIRG) with dusty AGN core  │
-│  #5   │ UM 643 (CGCG 018-065)   │ z=0.025 │ 55 papers    │ UM Survey barred starburst spiral in transition void │
-└───────┴─────────────────────────┴─────────┴──────────────┴──────────────────────────────────────────────────────┘
++-------+-------------------------+---------+--------------+------------------------------------------------------+
+| Rank  | Primary Catalog Name    | Redshift| NED Citations| What Observational Astrophysics Discovered           |
++-------+-------------------------+---------+--------------+------------------------------------------------------+
+|  #1   | CGCG 011-088 (Z 11-88)  | z=0.029 | 53 papers    | Dual resonance ring galaxy with nuclear rejuvenation |
+|  #2   | SDSS J150754.38+010816.7| z=0.061 | 42 papers    | Intermediate-Mass Black Hole candidate (1.4x10^6 Msun)|
+|  #3   | SDSS J101653.82+002857.0| z=0.116 | 38 papers    | High-Excitation Radio Quasar in HST Feedback Survey  |
+|  #4   | CGCG 021-096 (IRAS)     | z=0.051 | 59 papers    | Luminous Infrared Galaxy (LIRG) with dusty AGN core  |
+|  #5   | UM 643 (CGCG 018-065)   | z=0.025 | 55 papers    | UM Survey barred starburst spiral in transition void |
++-------+-------------------------+---------+--------------+------------------------------------------------------+
 ```
 
 ### 1. Rank #1: CGCG 011-088 (The Nuclear Rejuvenation Ring Galaxy)
-* **Coordinates:** RA 171.03603° (11h 24m 08.6s), Dec -1.15776° (-01° 09′ 28″) | `z = 0.0293` (~125 Mpc)
+* **Coordinates:** RA 171.03603 deg (11h 24m 08.6s), Dec -1.15776 deg (-01 deg 09 min 28 sec) | $z = 0.0293$ (~125 Mpc)
 * **Catalog Identifiers:** CGCG 011-088, Z 11-88, MCG +00-29-027, LEDA 35016, 2MASX J11240862-0109277.
 * **What the Literature Discovered (53 papers in NED):**
-  * Morphologically identified in the *Comprehensive de Vaucouleurs revised Hubble-Sandage (CVRHS)* system and *Galaxy Zoo 2* as a prominent **(R′_2)SAB(r:)a resonance ring galaxy** containing both inner and outer stellar rings.
-  * Martín-Navarro et al. (2022, *MNRAS Letters*, 513, L10) identified it as a hallmark case of **nuclear rejuvenation**: non-axisymmetric ring torques channel fresh gas into the central core, reigniting black hole accretion after a quiescent period.
+  * Morphologically identified in the *Comprehensive de Vaucouleurs revised Hubble-Sandage (CVRHS)* system and *Galaxy Zoo 2* as a prominent **(R'_2)SAB(r:)a resonance ring galaxy** containing both inner and outer stellar rings.
+  * Martin-Navarro et al. (2022, *MNRAS Letters*, 513, L10) identified it as a hallmark case of **nuclear rejuvenation**: non-axisymmetric ring torques channel fresh gas into the central core, reigniting black hole accretion after a quiescent period.
 * **Why Our ML Algorithm Caught It:**
-  * Sits abnormally high on the Seyfert wing (`log₁₀([O III]/Hβ) = +0.84`) despite moderate nitrogen metallicity (`log₁₀([N II]/Hα) = -0.10`).
+  * Sits abnormally high on the Seyfert wing ($\log_{10}([	ext{O III}]/	ext{H}eta) = +0.84$) despite moderate nitrogen metallicity ($\log_{10}([	ext{N II}]/	ext{H}lpha) = -0.10$).
   * Exceptionally clean emission profile with minimum line S/N of 56.9 and tight 95% CI error bounds (width < 0.04 dex), earning 3/3 unanimous algorithm votes as an unconventional high-confidence emission outlier.
 
 ### 2. Rank #2: SDSS J150754.38+010816.7 (Intermediate-Mass Black Hole Candidate)
-* **Coordinates:** RA 226.97660° (15h 07m 54.4s), Dec +1.13799° (+01° 08′ 17″) | `z = 0.0610` (~260 Mpc)
+* **Coordinates:** RA 226.97660 deg (15h 07m 54.4s), Dec +1.13799 deg (+01 deg 08 min 17 sec) | $z = 0.0610$ (~260 Mpc)
 * **Catalog Identifiers:** 2MASX J15075440+0108168, WISEA J150754.38+010816.8, FIRST J150754.3+010816, NVSS J150754+010812, [VV2006c] J150754.4+010816.
 * **What the Literature Discovered (42 papers in NED):**
-  * Highlighted in observational surveys as harboring an **Intermediate-Mass Black Hole (IMBH) candidate** with an estimated central black hole mass of only `M_BH ≈ 1.4 × 10⁶ M_☉` (orders of magnitude lighter than normal quasar engines).
+  * Highlighted in observational surveys as harboring an **Intermediate-Mass Black Hole (IMBH) candidate** with an estimated central black hole mass of only $M_{	ext{BH}} pprox 1.4 	imes 10^6 M_\odot$ (orders of magnitude lighter than normal quasar engines).
   * Lin et al. (2018, *The Astronomical Journal*, 155, 188) investigated its low-power relativistic radio core detected in the VLA FIRST survey, analyzing the accretion mode powering its nuclear jets.
 * **Why Our ML Algorithm Caught It:**
-  * Flagged as an **Ultra-High Ionization Outlier**: `log₁₀([O III]/Hβ) = +1.13` (higher than 99.8% of all galaxies in SDSS DR17).
+  * Flagged as an **Ultra-High Ionization Outlier**: $\log_{10}([	ext{O III}]/	ext{H}eta) = +1.13$ (higher than 99.8% of all galaxies in SDSS DR17).
   * Accretion onto a lower-mass black hole at high Eddington ratios generates an intense, hard UV ionizing radiation field that super-excites forbidden [O III] relative to standard Seyferts.
 
 ### 3. Rank #3: SDSS J101653.82+002857.0 (The HST Quasar Feedback Target)
-* **Coordinates:** RA 154.22425° (10h 16m 53.8s), Dec +0.48254° (+00° 28′ 57″) | `z = 0.1163` (~520 Mpc)
+* **Coordinates:** RA 154.22425 deg (10h 16m 53.8s), Dec +0.48254 deg (+00 deg 28 min 57 sec) | $z = 0.1163$ (~520 Mpc)
 * **Catalog Identifiers:** WISEA J101653.82+002856.7, 2MASX J10165384+0028571, LEDA 1167114, NVSS J101653+002858, [VV2010c] J101653.9+002857.
 * **What the Literature Discovered (38 papers in NED):**
   * Officially cataloged in NED as a **QSO (Quasar)** and a **High-Excitation Radio Galaxy (HERG)**.
   * Selected for ultraviolet spectroscopic observation with the **Hubble Space Telescope (HST Cosmic Origins Spectrograph - COS)**.
   * Molyneux et al. (2024, *MNRAS*, 527, 4420) featured this system in *The Quasar Feedback Survey*, utilizing ALMA and CO line transitions to map energetic molecular gas outflows clearing star-forming fuel from the galaxy.
 * **Why Our ML Algorithm Caught It:**
-  * Shows intense [O III] emission (`log₁₀([O III]/Hβ) = +1.00`) coupled with low nitrogen (`log₁₀([N II]/Hα) = -0.34`).
+  * Shows intense [O III] emission ($\log_{10}([	ext{O III}]/	ext{H}eta) = +1.00$) coupled with low nitrogen ($\log_{10}([	ext{N II}]/	ext{H}lpha) = -0.34$).
   * Yields massive PCA reconstruction residuals because energetic quasar wind kinematics distort the standard 4-line emission manifold.
 
 ### 4. Rank #4: CGCG 021-096 / IRAS 15240+0046 (The Luminous Infrared AGN)
-* **Coordinates:** RA 231.65696° (15h 26m 37.7s), Dec +0.59264° (+00° 35′ 34″) | `z = 0.0507` (~220 Mpc)
+* **Coordinates:** RA 231.65696 deg (15h 26m 37.7s), Dec +0.59264 deg (+00 deg 35 min 34 sec) | $z = 0.0507$ (~220 Mpc)
 * **Catalog Identifiers:** CGCG 021-096, Z 21-96, IRAS 15240+0046, IRAS F15240+0045, LEDA 55103, FIRST J152637.6+003534, [VV2010c] J152637.7+003534.
 * **What the Literature Discovered (59 papers in NED):**
   * Discovered in the IRAS satellite mission as a **Luminous Infrared Galaxy (LIRG)**, powered by an active galactic nucleus buried inside dense, warm interstellar dust clouds.
   * Ramos Padilla et al. (2022, *MNRAS*, 510, 687) studied its Spectral Energy Distribution (SED) and obscuring torus geometry.
 * **Why Our ML Algorithm Caught It:**
-  * Simultaneously exhibits extreme high-excitation emission (`log₁₀([O III]/Hβ) = +0.98`) and substantial dust extinction (large Balmer decrement `Hα/Hβ`), causing it to diverge strongly from pure optical starburst models.
+  * Simultaneously exhibits extreme high-excitation emission ($\log_{10}([	ext{O III}]/	ext{H}eta) = +0.98$) and substantial dust extinction (large Balmer decrement $	ext{H}lpha/	ext{H}eta$), causing it to diverge strongly from pure optical starburst models.
 
 ### 5. Rank #5: UM 643 (Historic University of Michigan Survey Starburst)
-* **Coordinates:** RA 212.61180° (14h 10m 26.8s), Dec -0.83238° (-00° 49′ 57″) | `z = 0.0254` (~110 Mpc)
+* **Coordinates:** RA 212.61180 deg (14h 10m 26.8s), Dec -0.83238 deg (-00 deg 49 min 57 sec) | $z = 0.0254$ (~110 Mpc)
 * **Catalog Identifiers:** UM 643, CGCG 018-065, Z 18-65, MCG +00-36-027, PGC 50604, 2MASX J14102685-0049563.
 * **What the Literature Discovered (55 papers in NED):**
   * Discovered in the landmark University of Michigan (UM) objective-prism survey for unusual optical emission-line objects.
   * Morphologically identified as an energetic barred starburst spiral (`SB/SBR`) with radio continuum emission cataloged in Condon et al. (2019/2022, *ApJ*, 872, 148).
 * **Why Our ML Algorithm Caught It:**
-  * Unlike the other top candidates (which are high-ionization AGN), UM 643 is an **unconventional composite transition outlier** (`log₁₀([O III]/Hβ) = -0.38`, `log₁₀([N II]/Hα) = -0.25`).
+  * Unlike the other top candidates (which are high-ionization AGN), UM 643 is an **unconventional composite transition outlier** ($\log_{10}([	ext{O III}]/	ext{H}eta) = -0.38$, $\log_{10}([	ext{N II}]/	ext{H}lpha) = -0.25$).
   * It occupies the sparse transition valley between pure starbursts and LINERs. Local Outlier Factor (LOF) flagged it due to its sparse local neighborhood density.
 
 ---
@@ -310,4 +326,4 @@ Full BibTeX records are available in [`REFERENCES.bib`](REFERENCES.bib).
 
 * **Code License:** [MIT License](LICENSE) © 2026 Aditya Bhadoria.
 * **Primary Scientific Attribution (Mandatory):** This repository is an educational reproduction and open-source demonstration. Any scientific publication, paper, or research work utilizing the BPT diagnostic, classification boundaries, or SDSS catalog **must primarily cite the original literature** listed in [Scientific References](#scientific-references--literature-attribution) and [`REFERENCES.bib`](REFERENCES.bib) (Baldwin et al. 1981; Kauffmann et al. 2003; Kewley et al. 2001, 2006; Brinchmann et al. 2004; Abdurro'uf et al. 2022).
-* **Software Implementation Citation (Optional):** If you specifically adapt or reuse this Python pipeline, code structure, or plotting workflow in an educational tutorial, university lab, or coding demo, you may additionally cite the software repository via [`CITATION.cff`](CITATION.cff) or GitHub's **"Cite this repository"** button.
+* **Software Implementation Citation (Optional):** If you specifically adapt or reuse this Python pipeline, code structure, or plotting workflow in an educational tutorial, university lab, or coding demo, you may additionally cite the software repository via [`CITATION.cff`](CITATION.cff) or GitHub's **"Cite this repository"** button.\n
