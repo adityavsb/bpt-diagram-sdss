@@ -24,12 +24,12 @@ When high-energy radiation strikes interstellar gas, atoms ionize and recombine,
                High [O III] / H-beta  (Hard Ionizing Photons)
                          ^
                          |       ^
-                         |      /   AGN Wing (Seyferts)
-                         |     /    [Hard power-law accretion]
+                         |      /   AGN Wing
+                         |     /    [Hard UV/X-ray accretion]
                          |    /
-                         |   /      ^
-                         |  /      /   LINERs (Shocks / Old Stars)
-       Star-Forming      | /      /
+                         |   /
+                         |  /
+       Star-Forming      | /       Transition (Composite)
        (OB Star Nurseries)
                          |
                          v
@@ -41,7 +41,7 @@ When high-energy radiation strikes interstellar gas, atoms ionize and recombine,
 
 ## Diagnostic Boundaries
 
-We implement the standard theoretical and empirical classification curves from the literature:
+We implement the standard theoretical and empirical classification curves from the literature on the optical $[\text{N II}]\lambda 6584/\text{H}\alpha$ vs. $[\text{O III}]\lambda 5007/\text{H}\beta$ diagnostic plane:
 
 1. **Kauffmann et al. (2003) Pure Star-Formation Limit:**
 
@@ -57,15 +57,13 @@ $$
 \log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = \frac{0.61}{\log_{10}([\text{N II}]/\text{H}\alpha) - 0.47} + 1.19 \quad (\text{for } x < 0.47)
 $$
 
-   Galaxies above this solid curve cannot be ionized by starbursts alone, requiring an Active Galactic Nucleus (AGN).
+   Galaxies above this solid curve cannot be ionized by starbursts alone (even under extreme zero-metallicity, maximum stellar photoionization models), requiring hard ionizing radiation from an Active Galactic Nucleus (AGN) or radiative shocks.
 
-3. **Kewley et al. (2006) Seyfert vs. LINER Demarcation:**
+3. **Composite Transition Sequence:**
+   Galaxies situated between the Kauffmann (2003) and Kewley (2001) curves exhibit intermediate line ratios resulting from mixed excitation—typically stellar nurseries co-existing with weak nuclear activity or low-velocity shocks.
 
-$$
-\log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = 1.89 \log_{10}\left(\frac{[\text{N II}]}{\text{H}\alpha}\right) + 0.76
-$$
-
-   Separates high-ionization Seyferts (active black holes) from low-ionization LINERs.
+> [!NOTE]
+> **On Seyfert vs. LINER Separation**: In the literature, Kewley et al. (2006, Eq. 1) established the division $\log_{10}([\text{O III}]/\text{H}\beta) = 1.89 \log_{10}([\text{S II}]/\text{H}\alpha) + 0.76$ specifically for the optical $[\text{S II}]/\text{H}\alpha$ diagnostic diagram (and Eq. 2 for $[\text{O I}]/\text{H}\alpha$). On the standard 4-line $[\text{N II}]/\text{H}\alpha$ diagram, Seyferts and LINERs overlap significantly without a clean bimodal valley. Therefore, standard spectroscopic practice employs the canonical 3-class demarcation (**Star-Forming, Composite, AGN**), reserving fine-grained Seyfert vs. LINER separation for multi-line $[\text{S II}]$, $[\text{O I}]$, or WHAN diagrams.
 
 ---
 
@@ -77,8 +75,7 @@ Filtered for validated spectroscopic galaxies (redshift $0.02 < z < 0.25$) with 
 | :--- | :---: | :---: | :--- |
 | **Star-Forming** | `6,213` | **`62.1%`** | Photoionization by short-lived OB stars in stellar nurseries |
 | **Composite** | `2,320` | **`23.2%`** | Transition systems undergoing simultaneous starbursts and AGN accretion |
-| **Seyfert (AGN)** | `226` | **`2.3%`** | Hard UV/X-ray ionizing radiation from supermassive black hole accretion disks |
-| **LINER** | `1,240` | **`12.4%`** | Low-ionization shock excitation or evolved post-AGB stellar populations |
+| **AGN** | `1,466` | **`14.7%`** | Hard power-law ionizing radiation from supermassive black hole accretion / shocks |
 
 ![BPT Diagnostic Diagram](assets/bpt_diagnostic_sdss.png)
 
@@ -107,7 +104,7 @@ bpt-diagram-sdss/
 +-- .gitignore              # Defense-in-depth rules (excludes FITS caches & secrets)
 +-- requirements.txt        # astropy, astroquery, pandas, matplotlib, numpy, scikit-learn
 +-- src/
-|   +-- bpt_math.py         # Boundary equations (Kauffmann 2003, Kewley 2001/2006)
+|   +-- bpt_math.py         # Boundary equations (Kauffmann 2003, Kewley 2001, Kewley 2006 reference)
 |   +-- query_data.py       # SDSS DR17 query & local caching with quality cuts
 |   +-- plot_bpt.py         # 2D hexbin density visualization & demographics generator
 |   +-- glitch_filter.py    # Analytical Gaussian error propagation & 95% CI modeling
@@ -126,7 +123,7 @@ bpt-diagram-sdss/
 
 ## Iteration 2: Tri-Algorithmic Celestial Anomaly Detection & Glitch Disentanglement
 
-While classical demarcation curves partition galaxies into deterministic boxes (*Star-Forming, Composite, Seyfert, LINER*), real-world survey astronomy makes breakthrough discoveries (e.g. **Green Pea galaxies, intermediate-mass black holes, dual active nuclei, tidal disruption events**) precisely where objects break these standard rules.
+While classical demarcation curves partition galaxies into deterministic boxes (*Star-Forming, Composite, AGN*), real-world survey astronomy makes breakthrough discoveries (e.g. **Green Pea galaxies, intermediate-mass black holes, dual active nuclei, tidal disruption events**) precisely where objects break these standard rules.
 
 Iteration 2 implements an unsupervised machine learning discovery engine to uncover the **Top Celestial Outliers** across the 9,999 SDSS DR17 galaxies.
 
@@ -175,8 +172,9 @@ Filtered for validated low glitch risk (`pipeline_glitch_risk` <= 0.5%, min S/N 
 | **#2** | `350255779153995776` | `0.061` | `-0.17` | `+1.13` | `[-0.18, -0.16]`, `[+1.11, +1.14]` | `99.4` | **`99.0%`** | Ultra-High Ionization Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=350255779153995776) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=226.97660&dec=1.13799&layer=ls-dr10&zoom=15) |
 | **#3** | `305239577747023872` | `0.116` | `-0.34` | `+1.00` | `[-0.35, -0.33]`, `[+0.99, +1.02]` | `99.2` | **`98.9%`** | Ultra-High Ionization Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=305239577747023872) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=154.22425&dec=0.48254&layer=ls-dr10&zoom=15) |
 | **#4** | `352546336886777856` | `0.051` | `-0.10` | `+0.98` | `[-0.11, -0.09]`, `[+0.96, +1.00]` | `99.1` | **`98.8%`** | Ultra-High Ionization Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=352546336886777856) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=231.65696&dec=0.59264&layer=ls-dr10&zoom=15) |
-| **#9** | `301908877954279424` | `0.032` | `-0.23` | `+0.20` | `[-0.24, -0.22]`, `[+0.18, +0.22]` | `98.1` | **`98.0%`** | Transition Composite / Void Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=301908877954279424) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=146.90798&dec=-0.62646&layer=ls-dr10&zoom=15) |
-| **#10** | `341263147589462016` | `0.053` | `+0.01` | `+0.93` | `[0.00, +0.02]`, `[+0.91, +0.95]` | `98.2` | **`97.8%`** | Extreme Seyfert / Fast Accretion Outflow | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=341263147589462016) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=216.59478&dec=-0.56942&layer=ls-dr10&zoom=15) |
+| **#5** | `340022899698067456` | `0.025` | `-0.25` | `-0.38` | `[-0.26, -0.24]`, `[-0.40, -0.35]` | `98.9` | **`98.6%`** | Unconventional Emission Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=340022899698067456) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=212.61180&dec=-0.83238&layer=ls-dr10&zoom=15) |
+| **#9** | `301908877954279424` | `0.032` | `-0.23` | `+0.20` | `[-0.23, -0.22]`, `[+0.19, +0.22]` | `98.1` | **`98.0%`** | Transition Composite / Intermediate Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=301908877954279424) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=150.03499&dec=0.98479&layer=ls-dr10&zoom=15) |
+| **#10** | `341263147589462016` | `0.053` | `+0.01` | `+0.93` | `[-0.00, +0.02]`, `[+0.91, +0.95]` | `98.2` | **`97.8%`** | Extreme Seyfert / Fast Accretion Outflow | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=341263147589462016) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=213.24683&dec=0.92118&layer=ls-dr10&zoom=15) |
 
 *Full 20-candidate catalog exported with complete coordinates and multi-wavelength links in [`data/sdss_anomaly_candidates.csv`](data/sdss_anomaly_candidates.csv).*
 
@@ -248,7 +246,7 @@ Beyond algorithmic scores, each candidate corresponds to an established or emerg
   * Morphologically identified as an energetic barred starburst spiral (`SB/SBR`) with radio continuum emission cataloged in Condon et al. (2019/2022, *ApJ*, 872, 148).
 * **Why Our ML Algorithm Caught It:**
   * Unlike the other top candidates (which are high-ionization AGN), UM 643 is an **unconventional composite transition outlier** (**log₁₀([O III] / Hβ) = -0.38**, **log₁₀([N II] / Hα) = -0.25**).
-  * It occupies the sparse transition valley between pure starbursts and LINERs. Local Outlier Factor (LOF) flagged it due to its sparse local neighborhood density.
+  * It occupies the sparse transition valley between the pure starburst locus and the AGN plume. Local Outlier Factor (LOF) flagged it due to its sparse local neighborhood density.
 
 ---
 
@@ -288,7 +286,7 @@ This project implements analytical boundaries, survey datasets, and observationa
    Kauffmann, G., Heckman, T. M., Tremonti, C., et al. (2003). *The host galaxies of active galactic nuclei.* **MNRAS**, 346(4), 1055–1077. [DOI: 10.1111/j.1365-2966.2003.07154.x](https://doi.org/10.1111/j.1365-2966.2003.07154.x)
 3. **Extreme Starburst Theoretical Limit:**  
    Kewley, L. J., Dopita, M. A., Sutherland, R. S., et al. (2001). *Theoretical Modeling of Starburst Galaxies.* **ApJ**, 556(1), 121–140. [DOI: 10.1086/321545](https://doi.org/10.1086/321545)
-4. **Seyfert vs. LINER Optical Classification:**  
+4. **AGN Host Galaxies & Multi-Line Diagnostics:**  
    Kewley, L. J., Groves, B., Kauffmann, G., & Heckman, T. (2006). *The host galaxies and classification of active galactic nuclei.* **MNRAS**, 372(3), 961–976. [DOI: 10.1111/j.1365-2966.2006.10869.x](https://doi.org/10.1111/j.1365-2966.2006.10869.x)
 5. **MPA-JHU Emission-Line Measurements:**  
    Brinchmann, J., Charlot, S., White, S. D. M., et al. (2004). *The physical properties of star-forming galaxies in the low-redshift Universe.* **MNRAS**, 351(4), 1151–1179. [DOI: 10.1111/j.1365-2966.2004.07881.x](https://doi.org/10.1111/j.1365-2966.2004.07881.x)

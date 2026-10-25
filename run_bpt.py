@@ -2,7 +2,7 @@
 Master Pipeline Runner: BPT Emission-Line Diagnostic & Anomaly Discovery (SDSS DR17).
 Executes:
 1. Catalog query with signal-to-noise quality filtering
-2. Deterministic BPT classification (Kauffmann 2003, Kewley 2001, Kewley 2006)
+2. Deterministic BPT classification (Kauffmann 2003, Kewley 2001)
 3. Anchor galaxy comparison (M51 vs. NGC 1068)
 4. Tri-Algorithmic Anomaly Detection (Isolation Forest, LOF, PCA Reconstruction)
 5. Physical Anomaly vs. Pipeline Glitch Disentanglement with 95% Confidence Intervals
@@ -62,10 +62,9 @@ def run_pipeline(
     mechanisms = {
         "Star-Forming": "OB Stellar Photons (< 10 Myr)",
         "Composite": "Transition (Starburst + AGN)",
-        "Seyfert (AGN)": "Supermassive Black Hole Accretion",
-        "LINER": "Low-Ionization Shocks / Old Stars"
+        "AGN": "Supermassive Black Hole Accretion / Shocks"
     }
-    for c in ["Star-Forming", "Composite", "Seyfert (AGN)", "LINER"]:
+    for c in ["Star-Forming", "Composite", "AGN"]:
         cnt = counts.get(c, 0)
         pct = (cnt / len(df)) * 100.0
         mech = mechanisms.get(c, "Unknown")

@@ -2,7 +2,7 @@
 Publication-quality visualization for SDSS DR17 BPT Anomaly Detection.
 Overlays:
 - 2D hexbin density of the bulk galaxy population
-- Kauffmann (2003), Kewley (2001), and Kewley (2006) demarcation curves
+- Kauffmann (2003) and Kewley (2001) demarcation curves
 - Top 20 Confirmed Physical Anomalies with 95% Confidence Interval error ellipses
 - Control Pipeline Glitches with large measurement jitter error bars
 - Real anchor galaxies: M51 & NGC 1068
@@ -15,7 +15,6 @@ from matplotlib.patches import Ellipse
 from bpt_math import (
     kauffmann_boundary,
     kewley_boundary,
-    seyfert_liner_boundary,
 )
 from query_data import ANCHOR_GALAXIES
 
@@ -69,15 +68,6 @@ def plot_bpt_anomalies(
         x_k01, y_k01,
         color="#F43F5E", linestyle="-", linewidth=2.2,
         label=r"Kewley+01 (Theoretical Starburst Upper Limit)",
-        zorder=3
-    )
-
-    x_liner = np.linspace(-0.25, 0.5, 200)
-    y_liner = seyfert_liner_boundary(x_liner)
-    ax.plot(
-        x_liner, y_liner,
-        color="#F59E0B", linestyle=":", linewidth=2.0,
-        label=r"Kewley+06 (Seyfert / LINER Demarcation)",
         zorder=3
     )
 
@@ -161,9 +151,9 @@ def plot_bpt_anomalies(
     # 6. Physical Regime Labels
     ax.text(-1.10, -0.65, "STARBURST LOCUS\n(OB Stellar Nurseries)",
             color="#38BDF8", fontsize=10, fontweight="bold", alpha=0.85, ha="center")
-    ax.text(0.20, 1.05, "SEYFERT AGN WING\n(Black Hole Accretion)",
+    ax.text(0.20, 1.05, "HIGH-IONIZATION AGN\n(Seyfert Accretion)",
             color="#F43F5E", fontsize=10, fontweight="bold", alpha=0.85, ha="center")
-    ax.text(0.28, -0.15, "LINERs\n(Shocks / Old Stars)",
+    ax.text(0.28, -0.15, "LOW-IONIZATION AGN\n(LINER / Shock Regimes)",
             color="#F59E0B", fontsize=9, fontweight="bold", alpha=0.85, ha="center")
     ax.text(-0.15, 0.05, "COMPOSITE\n(Star + AGN)",
             color="#CBD5E1", fontsize=9, style="italic", alpha=0.75, ha="center")
