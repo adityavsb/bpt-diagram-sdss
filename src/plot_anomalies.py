@@ -53,7 +53,7 @@ def plot_bpt_anomalies(
     cb.outline.set_edgecolor("#2D3748")
 
     # 2. Demarcation Boundary Lines
-    x_k03 = np.linspace(-1.5, 0.0, 300)
+    x_k03 = np.linspace(-2.3, 0.0, 300)
     y_k03 = kauffmann_boundary(x_k03)
     ax.plot(
         x_k03, y_k03,
@@ -62,7 +62,7 @@ def plot_bpt_anomalies(
         zorder=3
     )
 
-    x_k01 = np.linspace(-1.5, 0.42, 300)
+    x_k01 = np.linspace(-2.3, 0.42, 300)
     y_k01 = kewley_boundary(x_k01)
     ax.plot(
         x_k01, y_k01,
@@ -163,8 +163,8 @@ def plot_bpt_anomalies(
             color="#FDE047", fontsize=9, fontweight="bold", ha="left")
 
     # 7. Axis formatting & bounds
-    ax.set_xlim(-1.6, 0.6)
-    ax.set_ylim(-1.2, 1.4)
+    ax.set_xlim(-2.3, 0.8)
+    ax.set_ylim(-1.5, 1.6)
     ax.set_xlabel(r"$\log_{10}([\mathrm{N\ II}]\,\lambda 6584 \,/\, \mathrm{H}\alpha)$",
                   color="#F1F5F9", fontsize=13, labelpad=10)
     ax.set_ylabel(r"$\log_{10}([\mathrm{O\ III}]\,\lambda 5007 \,/\, \mathrm{H}\beta)$",
