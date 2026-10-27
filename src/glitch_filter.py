@@ -1,6 +1,7 @@
 """
 Error propagation, confidence intervals, and pipeline glitch vs. physical anomaly
 scoring for SDSS DR17 emission-line galaxy diagnostics.
+All flux errors are the MPA-JHU rescaled errors (see query_data.MPA_JHU_ERR_SCALE).
 """
 import numpy as np
 import pandas as pd
@@ -11,10 +12,12 @@ def compute_line_snr(df: pd.DataFrame) -> pd.DataFrame:
     summary SNR metrics (min, mean, max).
     """
     res = pd.DataFrame(index=df.index)
-    res["snr_ha"] = df["h_alpha_flux"] / np.maximum(df["h_alpha_flux_err"], 1e-9)
-    res["snr_hb"] = df["h_beta_flux"] / np.maximum(df["h_beta_flux_err"], 1e-9)
-    res["snr_oiii"] = df["oiii_5007_flux"] / np.maximum(df["oiii_5007_flux_err"], 1e-9)
-    res["snr_nii"] = df["nii_6584_flux"] / np.maximum(df["nii_6584_flux_err"], 1e-9)
+    # Errors are already MPA-JHU-rescaled by query_data.query_sdss_catalog.
+    # Zero/negative errors are excluded by the SQL selection, so no clamping.
+    res["snr_ha"] = df["h_alpha_flux"] / df["h_alpha_flux_err"]
+    res["snr_hb"] = df["h_beta_flux"] / df["h_beta_flux_err"]
+    res["snr_oiii"] = df["oiii_5007_flux"] / df["oiii_5007_flux_err"]
+    res["snr_nii"] = df["nii_6584_flux"] / df["nii_6584_flux_err"]
     
     snr_matrix = res[["snr_ha", "snr_hb", "snr_oiii", "snr_nii"]].values
     res["snr_min"] = np.min(snr_matrix, axis=1)
@@ -34,10 +37,11 @@ def compute_error_propagation(df: pd.DataFrame) -> pd.DataFrame:
     """
     ln10 = np.log(10.0)
     
-    rel_err_nii = df["nii_6584_flux_err"] / np.maximum(df["nii_6584_flux"], 1e-9)
-    rel_err_ha = df["h_alpha_flux_err"] / np.maximum(df["h_alpha_flux"], 1e-9)
-    rel_err_oiii = df["oiii_5007_flux_err"] / np.maximum(df["oiii_5007_flux"], 1e-9)
-    rel_err_hb = df["h_beta_flux_err"] / np.maximum(df["h_beta_flux"], 1e-9)
+    # Fluxes are > 0 by selection; errors are MPA-JHU-rescaled (see query_data).
+    rel_err_nii = df["nii_6584_flux_err"] / df["nii_6584_flux"]
+    rel_err_ha = df["h_alpha_flux_err"] / df["h_alpha_flux"]
+    rel_err_oiii = df["oiii_5007_flux_err"] / df["oiii_5007_flux"]
+    rel_err_hb = df["h_beta_flux_err"] / df["h_beta_flux"]
     
     sigma_x = (1.0 / ln10) * np.sqrt(rel_err_nii**2 + rel_err_ha**2)
     sigma_y = (1.0 / ln10) * np.sqrt(rel_err_oiii**2 + rel_err_hb**2)
