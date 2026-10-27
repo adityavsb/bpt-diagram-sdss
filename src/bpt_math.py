@@ -62,14 +62,16 @@ def classify_bpt(log_nii_ha, log_oiii_hb):
     Note: Disentangling AGN into Seyferts vs. LINERs requires the [S II]/Hα or [O I]/Hα
     diagnostic diagrams (Kewley et al. 2006).
     """
-    kauff_y = kauffmann_boundary(log_nii_ha)
-    kewley_y = kewley_boundary(log_nii_ha)
+    x = np.asarray(log_nii_ha)
+    y = np.asarray(log_oiii_hb)
+    kauff_y = kauffmann_boundary(x)
+    kewley_y = kewley_boundary(x)
 
-    is_star_forming = (log_nii_ha < 0.05) & (log_oiii_hb < kauff_y)
-    is_composite = (log_nii_ha < 0.47) & (log_oiii_hb < kewley_y) & ~is_star_forming
+    is_star_forming = (x < 0.05) & (y < kauff_y)
+    is_composite = (x < 0.47) & (y < kewley_y) & ~is_star_forming
     is_agn = ~is_star_forming & ~is_composite
 
-    categories = np.empty(len(log_nii_ha), dtype=object)
+    categories = np.empty(len(x), dtype=object)
     categories[is_star_forming] = "Star-Forming"
     categories[is_composite] = "Composite"
     categories[is_agn] = "AGN"

@@ -7,6 +7,7 @@ __pycache__/
 # Astronomical data downloads & caches
 data/*
 !data/sdss_anomaly_candidates.csv
+!data/anchor_galaxies.json
 *.fits
 *.fit
 *.csv

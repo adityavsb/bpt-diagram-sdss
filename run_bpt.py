@@ -18,7 +18,7 @@ import numpy as np
 # Add src to module search path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-from query_data import query_sdss_catalog, ANCHOR_GALAXIES
+from query_data import query_sdss_catalog, ANCHOR_GALAXIES, fetch_anchor_ratios
 from bpt_math import classify_bpt
 from plot_bpt import plot_bpt_diagram
 from glitch_filter import (
@@ -40,6 +40,7 @@ def run_pipeline(
     candidates_csv="data/sdss_anomaly_candidates.csv",
     top_n_candidates=20
 ):
+    fetch_anchor_ratios()
     print("=" * 85)
     print("SDSS DR17 BPT DIAGNOSTIC & TRI-ALGORITHMIC CELESTIAL ANOMALY DISCOVERY PIPELINE")
     print("=" * 85)

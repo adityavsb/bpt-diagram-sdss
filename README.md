@@ -83,12 +83,12 @@ Filtered for validated spectroscopic galaxies (redshift $0.02 < z < 0.25$) with 
 
 ## Two Anchor Galaxies: M51 vs. NGC 1068
 
-To anchor the catalog statistics to real objects you can see in the sky:
+Nuclear line ratios from the Palomar survey of nearby galaxy nuclei (Ho, Filippenko & Sargent 1997, ApJS, 112, 315), which observed the central few arcseconds of each galaxy, the same kind of aperture an SDSS fiber provides at the sample's redshifts.
 
-| Anchor Galaxy | Type | log([N II]/H-alpha) | log([O III]/H-beta) | Diagnostic Position |
+| Anchor Galaxy | HFS97 nuclear class | log([N II]/Hα) | log([O III]/Hβ) | Where it falls |
 | :--- | :--- | :---: | :---: | :--- |
-| **M51 (Whirlpool Galaxy)** | Star-Forming Spiral | `-0.42` | `-0.38` | Deep in the lower-left starburst locus. Its glow is driven by massive young stars. |
-| **NGC 1068 (M77)** | Seyfert 2 Active Nucleus | `+0.15` | `+0.95` | Prominently in the upper-right AGN wing. Its emission lines require an accreting supermassive black hole. |
+| **M51 / NGC 5194** | Seyfert 2 (earlier works: LINER) | `+0.07` | `+0.22` | AGN. The famous star-forming spiral arms are outside a nuclear aperture; the *nucleus* hosts a low-luminosity AGN. |
+| **NGC 1068 / M77** | Seyfert 2 | `+0.17` | `+1.10` | AGN. The archetypal obscured AGN. |
 
 ---
 
