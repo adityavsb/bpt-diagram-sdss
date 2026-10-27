@@ -34,6 +34,7 @@ from plot_anomalies import plot_bpt_anomalies
 
 def run_pipeline(
     sample_size=10000,
+    force_refresh=False,
     classic_plot="assets/bpt_diagnostic_sdss.png",
     anomaly_plot="assets/bpt_anomalies_sdss.png",
     candidates_csv="data/sdss_anomaly_candidates.csv",
@@ -44,8 +45,8 @@ def run_pipeline(
     print("=" * 85)
 
     # 1. Fetch data
-    df = query_sdss_catalog(sample_size=sample_size)
-    print(f"\n[1] Loaded {len(df):,} galaxies meeting S/N >= 3 cut on all 4 lines.")
+    df = query_sdss_catalog(sample_size=sample_size, force_refresh=force_refresh)
+    print(f"\n[1] Loaded {len(df):,} galaxies meeting S/N >= 3 (MPA-JHU rescaled errors) on all 4 lines.")
 
     # 2. Deterministic BPT Classification
     log_nii_ha = df["log_nii_ha"].values
@@ -183,5 +184,6 @@ def run_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SDSS DR17 BPT & Anomaly Pipeline")
     parser.add_argument("--sample-size", type=int, default=10000, help="Number of galaxies to evaluate")
+    parser.add_argument("--force-refresh", action="store_true", help="Ignore local cache and re-query SkyServer")
     args = parser.parse_args()
-    run_pipeline(sample_size=args.sample_size)
+    run_pipeline(sample_size=args.sample_size, force_refresh=args.force_refresh)
