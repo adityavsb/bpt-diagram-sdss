@@ -54,6 +54,12 @@ def run_pipeline(
     log_oiii_hb = df["log_oiii_hb"].values
     df["bpt_class"] = classify_bpt(log_nii_ha, log_oiii_hb)
 
+    # 2b. Validate against the MPA-JHU reference classification
+    from bpt_math import validate_against_mpa_jhu
+    agreement, _ = validate_against_mpa_jhu(df)
+    if agreement < 0.95:
+        raise RuntimeError(f"Classifier disagrees with MPA-JHU bptclass on {1-agreement:.1%} of objects; investigate before publishing numbers.")
+
     # 3. Print Demographics Table
     print("\n" + "=" * 85)
     print("1. DETERMINISTIC SPECTROSCOPIC DEMOGRAPHICS (CLASSICAL BPT)")
