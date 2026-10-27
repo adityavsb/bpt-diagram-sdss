@@ -6,7 +6,7 @@
 [![Survey](https://img.shields.io/badge/Survey-SDSS%20DR17%20%2F%20MPA--JHU-teal.svg)](https://www.sdss.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An observational astrophysics project implementing the landmark **Baldwin, Phillips & Terlevich (BPT, 1981)** emission-line diagnostic on ~10,000 galaxies from the **Sloan Digital Sky Survey (SDSS DR17)**.
+An observational astrophysics project implementing the landmark **Baldwin, Phillips & Terlevich (BPT, 1981)** emission-line diagnostic on ~10,000 galaxies from the **Sloan Digital Sky Survey**, using the MPA-JHU emission-line measurements (Brinchmann et al. 2004) of SDSS Legacy spectra as distributed in the `galSpecLine` table of **SDSS DR17**.
 
 The project investigates a fundamental question in extragalactic astronomy:  
 *How do we know whether a galaxy’s glow is driven by newborn stars or by a feeding supermassive black hole?*
@@ -57,7 +57,7 @@ $$
 \log_{10}\left(\frac{[\text{O III}]}{\text{H}\beta}\right) = \frac{0.61}{\log_{10}([\text{N II}]/\text{H}\alpha) - 0.47} + 1.19 \quad (\text{for } x < 0.47)
 $$
 
-   Galaxies above this solid curve cannot be ionized by starbursts alone (even under extreme zero-metallicity, maximum stellar photoionization models), requiring hard ionizing radiation from an Active Galactic Nucleus (AGN) or radiative shocks.
+   Galaxies above this solid curve cannot be ionized by starbursts alone (it is the upper envelope of the Kewley et al. 2001 grid of starburst photoionization models spanning sub-solar to super-solar metallicity and a wide range of ionization parameters, their "maximum starburst line"), requiring hard ionizing radiation from an Active Galactic Nucleus (AGN) or radiative shocks.
 
 3. **Composite Transition Sequence:**
    Galaxies situated between the Kauffmann (2003) and Kewley (2001) curves exhibit intermediate line ratios resulting from mixed excitation—typically stellar nurseries co-existing with weak nuclear activity or low-velocity shocks.
@@ -67,15 +67,15 @@ $$
 
 ---
 
-## Observational Results (9,999 SDSS DR17 Galaxies)
+## Observational Results (10,000 galaxies, deterministic hash-ordered sample)
 
-Filtered for validated spectroscopic galaxies (redshift $0.02 < z < 0.25$) with Signal-to-Noise $S/N \ge 3$ across all 4 diagnostic emission lines:
+Selection: `class = GALAXY`, `zWarning = 0`, `sciencePrimary = 1`, MPA-JHU `reliable = 1`, $0.02 < z < 0.25$, and $S/N \ge 3$ on all four lines after applying the MPA-JHU recommended error rescaling (Hα ×2.473, Hβ ×1.882, [O III] ×1.566, [N II] ×2.039). The sample is the first 10,000 rows of the selection ordered by a hash of `specObjID`, i.e. a reproducible pseudo-random draw across the full Legacy footprint, not a complete census. Percentages below describe this sample.
 
 | Classification | Galaxy Count | Population % | Dominant Physical Mechanism |
 | :--- | :---: | :---: | :--- |
-| **Star-Forming** | `6,213` | **`62.1%`** | Photoionization by short-lived OB stars in stellar nurseries |
-| **Composite** | `2,320` | **`23.2%`** | Transition systems undergoing simultaneous starbursts and AGN accretion |
-| **AGN** | `1,466` | **`14.7%`** | Hard power-law ionizing radiation from supermassive black hole accretion / shocks |
+| **Star-Forming** | `7,344` | **`73.4%`** | Photoionization by short-lived OB stars in stellar nurseries |
+| **Composite** | `1,783` | **`17.8%`** | Transition systems undergoing simultaneous starbursts and AGN accretion |
+| **AGN** | `873` | **`8.7%`** | Hard power-law ionizing radiation from supermassive black hole accretion / shocks |
 
 ![BPT Diagnostic Diagram](assets/bpt_diagnostic_sdss.png)
 
@@ -114,8 +114,10 @@ bpt-diagram-sdss/
 |   +-- bpt_diagnostic_sdss.png # Classical BPT diagram
 |   \-- bpt_anomalies_sdss.png  # Anomaly detection & 95% CI error ellipses
 +-- data/
-|   +-- sdss_bpt_sample.csv          # Cached 9,999 SDSS DR17 galaxies
-|   \-- sdss_anomaly_candidates.csv  # Ranked Top 20 physical celestial candidates
+|   +-- sdss_bpt_sample.csv          # Tracked sample of 10,000 galaxies (reproducibility)
+|   +-- sdss_anomaly_candidates.csv  # Ranked Top 20 physical celestial candidates
+|   +-- classifier_validation.csv    # Cross-tabulation vs. official MPA-JHU bptclass (100% agreement)
+|   \-- anchor_galaxies.json         # Palomar HFS97 nuclear emission line ratios
 \-- run_bpt.py              # Master pipeline runner (Classical BPT + Anomaly Discovery)
 ```
 
@@ -125,7 +127,7 @@ bpt-diagram-sdss/
 
 While classical demarcation curves partition galaxies into deterministic boxes (*Star-Forming, Composite, AGN*), real-world survey astronomy makes breakthrough discoveries (e.g. **Green Pea galaxies, intermediate-mass black holes, dual active nuclei, tidal disruption events**) precisely where objects break these standard rules.
 
-Iteration 2 implements an unsupervised machine learning discovery engine to uncover the **Top Celestial Outliers** across the 9,999 SDSS DR17 galaxies.
+Iteration 2 implements an unsupervised machine learning discovery engine to uncover the **Top Celestial Outliers** across the 10,000 SDSS galaxies.
 
 ![SDSS DR17 BPT Anomaly Detection](assets/bpt_anomalies_sdss.png)
 
@@ -215,7 +217,7 @@ Beyond algorithmic scores, each candidate corresponds to an established or emerg
   * Highlighted in observational surveys as harboring an **Intermediate-Mass Black Hole (IMBH) candidate** with an estimated central black hole mass of only **M_BH ≈ 1.4 × 10⁶ M_☉** (orders of magnitude lighter than normal quasar engines).
   * Lin et al. (2018, *The Astronomical Journal*, 155, 188) investigated its low-power relativistic radio core detected in the VLA FIRST survey, analyzing the accretion mode powering its nuclear jets.
 * **Why Our ML Algorithm Caught It:**
-  * Flagged as an **Ultra-High Ionization Outlier**: **log₁₀([O III] / Hβ) = +1.13** (higher than 99.8% of all galaxies in SDSS DR17).
+  * Flagged as an **Ultra-High Ionization Outlier**: **log₁₀([O III] / Hβ) = +1.13** (in this sample, log₁₀([O III] / Hβ) = +1.13 sits in the top 0.1% of high-excitation emitters).
   * Accretion onto a lower-mass black hole at high Eddington ratios generates an intense, hard UV ionizing radiation field that super-excites forbidden [O III] relative to standard Seyferts.
 
 ### 3. Rank #3: SDSS J101653.82+002857.0 (The HST Quasar Feedback Target)
@@ -272,7 +274,7 @@ pip install -r requirements.txt
 ```bash
 python run_bpt.py
 ```
-*Executes the end-to-end pipeline in ~4 seconds: queries SDSS DR17 (or loads local cache), performs classical BPT classification, runs the tri-algorithmic anomaly ensemble, computes 95% confidence intervals, and outputs publication figures to `assets/`.*
+*Executes the end-to-end pipeline in ~4 seconds: loads the tracked sample from `data/` (pass `--force-refresh` to re-query SkyServer), performs classical BPT classification, runs the tri-algorithmic anomaly ensemble, computes 95% confidence intervals, and outputs publication figures to `assets/`.*
 
 ---
 
