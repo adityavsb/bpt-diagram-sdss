@@ -15,6 +15,13 @@ data/*
 *.tar.gz
 !data/sdss_anomaly_candidates.csv
 
+# Baseline snapshots & metrics log
+notebooks/baseline_*/data/
+!notebooks/baseline_*/*.csv
+!notebooks/baseline_*/*.json
+!notebooks/baseline_*/*.png
+!notebooks/metrics_log.csv
+
 # Virtual environments
 .venv/
 venv/

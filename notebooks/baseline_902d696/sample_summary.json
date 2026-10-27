@@ -1,0 +1,14 @@
+{
+  "commit": "902d696",
+  "n_rows": 9999,
+  "ra_min": 145.1604,
+  "ra_max": 263.0508,
+  "dec_min": -3.7315,
+  "dec_max": 66.1637,
+  "z_median": 0.0844,
+  "class_counts": {
+    "Star-Forming": 6213,
+    "Composite": 2320,
+    "AGN": 1466
+  }
+}
