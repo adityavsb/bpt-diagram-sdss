@@ -15,9 +15,8 @@ from query_data import ANCHOR_GALAXIES
 def plot_bpt_diagram(df, output_path="assets/bpt_diagnostic_sdss.png"):
     log_nii_ha = df["log_nii_ha"].values
     log_oiii_hb = df["log_oiii_hb"].values
-
-    categories = classify_bpt(log_nii_ha, log_oiii_hb)
-    df["bpt_class"] = categories
+    if "bpt_class" not in df.columns:
+        df = df.assign(bpt_class=classify_bpt(log_nii_ha, log_oiii_hb))
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(15, 6.5), gridspec_kw={"width_ratios": [1.4, 1.0]})
