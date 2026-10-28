@@ -155,11 +155,7 @@ $$
 \sigma_x = \frac{1}{\ln 10} \sqrt{\left(\frac{\sigma_{[\text{N II}]}}{[\text{N II}]}\right)^2 + \left(\frac{\sigma_{\text{H}\alpha}}{\text{H}\alpha}\right)^2}, \quad \sigma_y = \frac{1}{\ln 10} \sqrt{\left(\frac{\sigma_{[\text{O III}]}}{[\text{O III}]}\right)^2 + \left(\frac{\sigma_{\text{H}\beta}}{\text{H}\beta}\right)^2}
 $$
 
-* **95% Confidence Interval Ellipses:**
-
-$$
-\text{CI}_{95} = [x \pm 1.96 \sigma_x, \; y \pm 1.96 \sigma_y]
-$$
+* **Uncertainty geometry:** 1-D marginal 95% intervals are $x \pm 1.96\,\sigma_x$, $y \pm 1.96\,\sigma_y$ (the `[lo, hi]` strings in the table). The plotted 2-D 95% error ellipses use semi-axes $2.448\,\sigma_x$, $2.448\,\sigma_y$ ($\sqrt{\chi^2_{2}(0.95)}$); a 1.96σ box would enclose only ~85% of a 2-D Gaussian. Errors in the two ratios are treated as uncorrelated (the MPA-JHU fits share a Balmer and a forbidden-line width, so this is an approximation).
 
 * **`pipeline_glitch_risk` (0–100%):** Flags objects whose outlier status is fragile to measurement noise (S/N approaching 3.0 or giant error ellipse area).
 * **`physical_anomaly_confidence` (0–100%):** Confirms high ML consensus backed by high signal-to-noise (S/N >> 10), compact error ellipses, and statistical detachment (>3σ) from standard tracks.

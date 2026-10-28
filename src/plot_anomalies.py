@@ -75,8 +75,8 @@ def plot_bpt_anomalies(
     if not top_glitches.empty:
         gx = top_glitches["log_nii_ha"].values
         gy = top_glitches["log_oiii_hb"].values
-        gdx = top_glitches["delta_x_95"].values
-        gdy = top_glitches["delta_y_95"].values
+        gdx = top_glitches["ellipse_95_semi_a"].values
+        gdy = top_glitches["ellipse_95_semi_b"].values
         
         # Plot large error bars for pipeline glitches
         ax.errorbar(
@@ -90,8 +90,8 @@ def plot_bpt_anomalies(
     # 4. Top Physical Celestial Anomalies with 95% Confidence Ellipses
     px = top_physical["log_nii_ha"].values
     py = top_physical["log_oiii_hb"].values
-    pdx = top_physical["delta_x_95"].values
-    pdy = top_physical["delta_y_95"].values
+    pdx = top_physical["ellipse_95_semi_a"].values
+    pdy = top_physical["ellipse_95_semi_b"].values
     ranks = top_physical["rank"].values
 
     for i in range(len(top_physical)):
@@ -126,7 +126,7 @@ def plot_bpt_anomalies(
     ax.scatter(
         px, py,
         marker="*", s=140, facecolors="#FFD700", edgecolors="#FFFFFF",
-        linewidths=0.9, label=r"Top 20 Physical Anomalies (Tight 95% CI)",
+        linewidths=0.9, label=r"Top candidates (2-D 95% error ellipse)",
         zorder=6
     )
 
@@ -195,7 +195,7 @@ def plot_bpt_anomalies(
         "• Equal-Weighted Consensus Voting\n"
         r"$\bf{Glitch\ Disentanglement}$" + "\n"
         "• Analytical Gaussian Error Propagation\n"
-        "• 95% CI Ellipses (1.96σ)\n"
+        r"• 2-D 95% error ellipses (2.45σ, χ²₂)" + "\n"
         "• S/N Thresholding & Locus Overlap"
     )
     ax.text(
