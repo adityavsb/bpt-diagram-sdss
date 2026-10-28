@@ -30,6 +30,7 @@ from glitch_filter import (
 from anomaly_detector import (
     detect_anomalies_tri_ensemble,
     assign_outlier_label,
+    stability_analysis,
 )
 from plot_anomalies import plot_bpt_anomalies
 
@@ -103,6 +104,7 @@ def run_pipeline(
     # 6. Tri-Algorithmic Anomaly Detection
     print("\n[4] Running Tri-Algorithmic Anomaly Ensemble (Isolation Forest + LOF + PCA Rec)...")
     anomaly_df = detect_anomalies_tri_ensemble(df, random_state=42)
+    stab_df = stability_analysis(df)
     
     # 7. Error Propagation & Fragility Disentanglement
     print("[5] Propagating line flux errors & calculating 95% Confidence Intervals...")
@@ -117,7 +119,7 @@ def run_pipeline(
     )
 
     # Merge results
-    df_merged = pd.concat([df, anomaly_df, snr_df, err_df, bnd_df, fragility_df], axis=1)
+    df_merged = pd.concat([df, anomaly_df, stab_df, snr_df, err_df, bnd_df, fragility_df], axis=1)
 
     # Assign outlier labels
     label_df = assign_outlier_label(
@@ -172,7 +174,7 @@ def run_pipeline(
         "rank", "specObjID", "ra", "dec", "z", "bpt_class",
         "log_nii_ha", "log_oiii_hb",
         "ci_95_nii_ha_str", "ci_95_oiii_hb_str",
-        "consensus_anomaly_score", "algorithm_votes",
+        "consensus_anomaly_score", "algorithm_votes", "n_runs_in_top",
         "quality_weighted_outlier_score", "measurement_fragility",
         "snr_min", "n_sigma_nearest_boundary", "class_robust_3sigma",
         "bpt_region", "driving_feature", "driving_feature_robust_z",

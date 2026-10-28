@@ -5,6 +5,7 @@ Combines:
 2. Local Outlier Factor (local neighborhood density ratio)
 3. PCA Reconstruction Error (spectral manifold reconstruction residual)
 """
+import os
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
@@ -164,3 +165,37 @@ def assign_outlier_label(df: pd.DataFrame, X_scaled: np.ndarray, fragility: np.n
         "driving_feature": driving,
         "driving_feature_robust_z": driving_z
     }, index=df.index)
+
+def stability_analysis(df: pd.DataFrame, seeds=(0, 1, 2, 3, 4), ks=(20, 35, 50), top_n=50,
+                       out_csv="data/anomaly_stability.csv") -> pd.DataFrame:
+    """
+    Re-runs the ensemble for every (seed, k) combination and reports, per object,
+    how many of the len(seeds)*len(ks) runs place it in the top `top_n` by consensus.
+    Also prints the mean pairwise Spearman correlation of consensus scores and the
+    mean pairwise Jaccard overlap of the top-`top_n` sets.
+    Column 'n_runs_in_top' is used by run_bpt to require stability.
+    """
+    from scipy.stats import spearmanr
+    from itertools import combinations
+
+    runs = {}
+    for seed in seeds:
+        for k in ks:
+            r = detect_anomalies_tri_ensemble(df, random_state=seed, lof_k=k, verbose=False)
+            runs[(seed, k)] = r["consensus_anomaly_score"].values
+    keys = list(runs)
+    rhos, jacs = [], []
+    tops = {key: set(np.argsort(-runs[key])[:top_n]) for key in keys}
+    for a, b in combinations(keys, 2):
+        rhos.append(spearmanr(runs[a], runs[b]).correlation)
+        jacs.append(len(tops[a] & tops[b]) / len(tops[a] | tops[b]))
+    n_in_top = np.zeros(len(df), dtype=int)
+    for key in keys:
+        n_in_top[list(tops[key])] += 1
+    print(f"[Stability] {len(keys)} runs; mean Spearman(consensus) = {np.mean(rhos):.3f}; "
+          f"mean Jaccard(top-{top_n}) = {np.mean(jacs):.3f}")
+    res = pd.DataFrame({"n_runs_in_top": n_in_top, "n_runs_total": len(keys)}, index=df.index)
+    os.makedirs(os.path.dirname(out_csv), exist_ok=True)
+    res.to_csv(out_csv)
+    return res
+

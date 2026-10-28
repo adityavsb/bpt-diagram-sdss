@@ -16,6 +16,7 @@ data/*
 !data/sdss_anomaly_candidates.csv
 !data/sdss_anomaly_candidates_simbad.csv
 !data/classifier_validation.csv
+!data/anomaly_stability.csv
 !data/anchor_galaxies.json
 
 # Baseline snapshots & metrics log
