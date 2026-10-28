@@ -1,10 +1,10 @@
 """
-Publication-quality visualization for SDSS DR17 BPT Anomaly Detection.
+Visualization for SDSS DR17 BPT line-ratio outlier detection.
 Overlays:
 - 2D hexbin density of the bulk galaxy population
 - Kauffmann (2003) and Kewley (2001) demarcation curves
-- Top 20 Confirmed Physical Anomalies with 95% Confidence Interval error ellipses
-- Control Pipeline Glitches with large measurement jitter error bars
+- Top outlier candidates with 95% Confidence Interval error ellipses
+- Control high-fragility objects with large measurement error bars
 - Real anchor galaxies: M51 & NGC 1068
 """
 import os
@@ -25,7 +25,7 @@ def plot_bpt_anomalies(
     output_path: str = "assets/bpt_anomalies_sdss.png"
 ):
     """
-    Renders publication-ready figure of SDSS DR17 galaxy anomalies on BPT plane.
+    Renders figure of SDSS DR17 galaxy line-ratio outliers on BPT plane.
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
@@ -71,14 +71,14 @@ def plot_bpt_anomalies(
         zorder=3
     )
 
-    # 3. Control Pipeline Glitches (Demonstrate measurement error jitter)
+    # 3. Control high-fragility objects (Demonstrate measurement error jitter)
     if not top_glitches.empty:
         gx = top_glitches["log_nii_ha"].values
         gy = top_glitches["log_oiii_hb"].values
         gdx = top_glitches["ellipse_95_semi_a"].values
         gdy = top_glitches["ellipse_95_semi_b"].values
         
-        # Plot large error bars for pipeline glitches
+        # Plot large error bars for high-fragility objects
         ax.errorbar(
             gx, gy, xerr=gdx, yerr=gdy,
             fmt="x", color="#EF4444", ecolor="#EF4444", elinewidth=1.2,
@@ -87,7 +87,7 @@ def plot_bpt_anomalies(
             zorder=4
         )
 
-    # 4. Top Physical Celestial Anomalies with 95% Confidence Ellipses
+    # 4. Top outlier candidates with 95% Confidence Ellipses
     px = top_physical["log_nii_ha"].values
     py = top_physical["log_oiii_hb"].values
     pdx = top_physical["ellipse_95_semi_a"].values
@@ -122,7 +122,7 @@ def plot_bpt_anomalies(
                 bbox=dict(boxstyle="round,pad=0.15", facecolor="#1E293B", edgecolor="#FDE047", alpha=0.85)
             )
 
-    # Scatter points for physical anomalies
+    # Scatter points for outlier candidates
     ax.scatter(
         px, py,
         marker="*", s=140, facecolors="#FFD700", edgecolors="#FFFFFF",
@@ -188,7 +188,7 @@ def plot_bpt_anomalies(
 
     # 8. Methodology Annotation Box
     info_text = (
-        r"$\bf{Tri-Algorithmic\ Ensemble}$" + "\n"
+        r"$\bf{Three-Algorithm\ Ensemble}$" + "\n"
         "• Isolation Forest + LOF + PCA Rec\n"
         "• Equal-Weighted Consensus Voting\n"
         r"$\bf{Measurement\ Fragility}$" + "\n"

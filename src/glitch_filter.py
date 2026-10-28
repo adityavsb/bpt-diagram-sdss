@@ -1,5 +1,5 @@
 """
-Error propagation, confidence intervals, and pipeline glitch vs. physical anomaly
+Error propagation, confidence intervals, and measurement fragility analysis
 scoring for SDSS DR17 emission-line galaxy diagnostics.
 All flux errors are the MPA-JHU rescaled errors (see query_data.MPA_JHU_ERR_SCALE).
 """

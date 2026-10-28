@@ -1,13 +1,13 @@
 """
-Master Pipeline Runner: BPT Emission-Line Diagnostic & Anomaly Discovery (SDSS DR17).
+Master Pipeline Runner: BPT Emission-Line Diagnostic & Outlier Detection (SDSS DR17).
 Executes:
 1. Catalog query with signal-to-noise quality filtering
 2. Deterministic BPT classification (Kauffmann 2003, Kewley 2001)
 3. Anchor galaxy comparison (M51 vs. NGC 1068)
-4. Tri-Algorithmic Anomaly Detection (Isolation Forest, LOF, PCA Reconstruction)
-5. Physical Anomaly vs. Pipeline Glitch Disentanglement with 95% Confidence Intervals
-6. Top 20 Candidate Catalog generation and SkyServer navigation links
-7. Visual diagnostic figure generation (Classic BPT + Anomaly Discovery)
+4. Ensemble line-ratio outlier detection (Isolation Forest, LOF, PCA Reconstruction)
+5. Measurement fragility and uncertainty propagation with 95% Confidence Intervals
+6. Outlier Candidate Catalog generation and navigation links
+7. Visual diagnostic figure generation (Classic BPT + Outlier Diagnostics)
 """
 import sys
 import os
@@ -50,7 +50,7 @@ def run_pipeline(
 ):
     fetch_anchor_ratios()
     print("=" * 85)
-    print("SDSS DR17 BPT DIAGNOSTIC & TRI-ALGORITHMIC CELESTIAL ANOMALY DISCOVERY PIPELINE")
+    print("SDSS DR17 BPT DIAGNOSTIC & ENSEMBLE OUTLIER DETECTION PIPELINE")
     print("=" * 85)
 
     # 1. Fetch data
@@ -101,8 +101,8 @@ def run_pipeline(
     print(f"\n[3] Generating classical BPT diagnostic figure -> {classic_plot}")
     plot_bpt_diagram(df, output_path=classic_plot)
 
-    # 6. Tri-Algorithmic Anomaly Detection
-    print("\n[4] Running Tri-Algorithmic Anomaly Ensemble (Isolation Forest + LOF + PCA Rec)...")
+    # 6. Outlier Detection
+    print("\n[4] Running Outlier Ensemble (Isolation Forest + LOF + PCA Rec)...")
     anomaly_df = detect_anomalies_tri_ensemble(df, random_state=42)
     stab_df = stability_analysis(df)
     
@@ -131,7 +131,7 @@ def run_pipeline(
 
     # Add interactive SkyServer and DESI Legacy Survey links
     df_merged["skyserver_url"] = [
-        f"http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid={sid}"
+        f"https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid={sid}"
         for sid in df_merged["specObjID"]
     ]
     df_merged["legacy_survey_url"] = [
@@ -161,7 +161,7 @@ def run_pipeline(
     )
     physical_candidates["rank"] = range(1, len(physical_candidates) + 1)
 
-    # Control Glitches: high fragility (>= 0.65), high raw anomaly score (look anomalous purely due to noise)
+    # Control objects: high fragility (>= 0.65), high raw anomaly score (look anomalous purely due to noise)
     glitch_candidates = (
         df_merged[df_merged["measurement_fragility"] >= 0.65]
         .sort_values(by="consensus_anomaly_score", ascending=False)
@@ -182,7 +182,7 @@ def run_pipeline(
     ]
     os.makedirs(os.path.dirname(candidates_csv), exist_ok=True)
     physical_candidates[output_cols].to_csv(candidates_csv, index=False)
-    print(f"\n[6] Saved Top {top_n_candidates} Physical Anomaly Candidates catalog -> {candidates_csv}")
+    print(f"\n[6] Saved Top {top_n_candidates} Outlier Candidates catalog -> {candidates_csv}")
 
     # Optional SIMBAD Cross-Match (resolves coordinates against CDS/Harvard mirrors)
     try:
@@ -209,7 +209,7 @@ def run_pipeline(
     print("=" * 105)
 
     # 9. Render Anomaly Plot
-    print(f"\n[7] Generating publication-grade Anomaly Diagnostic Figure -> {anomaly_plot}...")
+    print(f"\n[7] Generating Anomaly Diagnostic Figure -> {anomaly_plot}...")
     plot_bpt_anomalies(
         df=df_merged,
         top_physical=physical_candidates,
