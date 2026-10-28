@@ -62,15 +62,42 @@ def classify_bpt(log_nii_ha, log_oiii_hb):
     Note: Disentangling AGN into Seyferts vs. LINERs requires the [S II]/Hα or [O I]/Hα
     diagnostic diagrams (Kewley et al. 2006).
     """
-    kauff_y = kauffmann_boundary(log_nii_ha)
-    kewley_y = kewley_boundary(log_nii_ha)
+    x = np.asarray(log_nii_ha)
+    y = np.asarray(log_oiii_hb)
+    kauff_y = kauffmann_boundary(x)
+    kewley_y = kewley_boundary(x)
 
-    is_star_forming = (log_nii_ha < 0.05) & (log_oiii_hb < kauff_y)
-    is_composite = (log_nii_ha < 0.47) & (log_oiii_hb < kewley_y) & ~is_star_forming
+    is_star_forming = (x < 0.05) & (y < kauff_y)
+    is_composite = (x < 0.47) & (y < kewley_y) & ~is_star_forming
     is_agn = ~is_star_forming & ~is_composite
 
-    categories = np.empty(len(log_nii_ha), dtype=object)
+    categories = np.empty(len(x), dtype=object)
     categories[is_star_forming] = "Star-Forming"
     categories[is_composite] = "Composite"
     categories[is_agn] = "AGN"
     return categories
+
+
+def validate_against_mpa_jhu(df, out_csv="data/classifier_validation.csv"):
+    """
+    Cross-tabulates our classify_bpt labels against the MPA-JHU bptclass
+    column (galSpecExtra). Only classes 1 (SF), 3 (Composite), 4 (AGN) are
+    directly comparable; 2 and 5 are MPA-JHU's low-S/N classes, which should
+    be nearly absent after our S/N >= 3 (rescaled) cut, and -1 is unclassifiable.
+    Returns (agreement_fraction, crosstab).
+    """
+    import os
+    import pandas as pd
+    from query_data import MPA_JHU_BPTCLASS_TO_LABEL
+
+    ref = df["mpa_jhu_bptclass"].map(MPA_JHU_BPTCLASS_TO_LABEL)
+    comparable = ref.notna()
+    ct = pd.crosstab(df.loc[comparable, "bpt_class"], ref[comparable],
+                     rownames=["ours"], colnames=["mpa_jhu"])
+    agree = float((df.loc[comparable, "bpt_class"] == ref[comparable]).mean())
+    os.makedirs(os.path.dirname(out_csv), exist_ok=True)
+    ct.to_csv(out_csv)
+    print(f"[Validation] Agreement with MPA-JHU bptclass on {int(comparable.sum()):,} "
+          f"comparable objects: {agree:.3%}")
+    print(ct)
+    return agree, ct

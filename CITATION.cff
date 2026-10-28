@@ -1,29 +1,55 @@
 cff-version: 1.2.0
-message: "This repository is an educational reproduction and software pipeline. Please primarily cite the original scientific papers (Baldwin et al. 1981, Kauffmann et al. 2003, Kewley et al. 2001, SDSS DR17) listed in REFERENCES.bib. If you specifically adapt or reuse this software implementation, you may cite it as below."
+message: >-
+  This repository is an educational reproduction of the BPT emission-line
+  diagnostic plus an unsupervised outlier search. Please cite the original
+  science papers listed in REFERENCES.bib (Baldwin et al. 1981; Kauffmann et al.
+  2003; Kewley et al. 2001, 2006; Brinchmann et al. 2004; Tremonti et al. 2004;
+  Abdurro'uf et al. 2022) for the method and data. If you reuse this software,
+  you may additionally cite it as below.
+type: software
+title: "bpt-diagram-sdss: BPT emission-line classification and line-ratio outlier search on SDSS (MPA-JHU) galaxies"
 authors:
-  - family-names: "Bhadoria"
-    given-names: "Aditya"
-    orcid: ""
-title: "bpt-diagram-sdss: Emission-Line Classification of Star-Forming Galaxies and AGN"
-version: 1.0.0
-date-released: 2026-10-20
+  - family-names: Bhadoria
+    given-names: Aditya
+version: 0.2.0
+date-released: "2026-10-28"
+repository-code: "https://github.com/adityavsb/bpt-diagram-sdss"
 url: "https://github.com/adityavsb/bpt-diagram-sdss"
+license: MIT
 keywords:
   - astronomy
   - astrophysics
   - bpt-diagram
   - sdss
+  - mpa-jhu
   - spectroscopy
   - galaxies
   - active-galactic-nuclei
-license: "MIT"
+  - outlier-detection
 references:
   - type: article
     authors:
-      - family-names: "Kauffmann"
-        given-names: "Guinevere"
-      - family-names: "Heckman"
-        given-names: "Timothy M."
+      - family-names: Baldwin
+        given-names: J. A.
+      - family-names: Phillips
+        given-names: M. M.
+      - family-names: Terlevich
+        given-names: R.
+    title: "Classification parameters for the emission-line spectra of extragalactic objects"
+    journal: "Publications of the Astronomical Society of the Pacific"
+    year: 1981
+    volume: 93
+    start: 5
+    end: 19
+    doi: "10.1086/130766"
+  - type: article
+    authors:
+      - family-names: Kauffmann
+        given-names: Guinevere
+      - family-names: Heckman
+        given-names: Timothy M.
+      - family-names: Tremonti
+        given-names: Christy
     title: "The host galaxies of active galactic nuclei"
     journal: "Monthly Notices of the Royal Astronomical Society"
     year: 2003
@@ -34,10 +60,12 @@ references:
     doi: "10.1111/j.1365-2966.2003.07154.x"
   - type: article
     authors:
-      - family-names: "Kewley"
-        given-names: "L. J."
-      - family-names: "Dopita"
-        given-names: "M. A."
+      - family-names: Kewley
+        given-names: L. J.
+      - family-names: Dopita
+        given-names: M. A.
+      - family-names: Sutherland
+        given-names: R. S.
     title: "Theoretical Modeling of Starburst Galaxies"
     journal: "The Astrophysical Journal"
     year: 2001
@@ -48,16 +76,35 @@ references:
     doi: "10.1086/321545"
   - type: article
     authors:
-      - family-names: "Baldwin"
-        given-names: "J. A."
-      - family-names: "Phillips"
-        given-names: "M. M."
-      - family-names: "Terlevich"
-        given-names: "R."
-    title: "Classification parameters for the emission-line spectra of extragalactic objects"
-    journal: "Publications of the Astronomical Society of the Pacific"
-    year: 1981
-    volume: 93
-    start: 5
-    end: 19
-    doi: "10.1086/130766"
+      - family-names: Kewley
+        given-names: L. J.
+      - family-names: Groves
+        given-names: B.
+      - family-names: Kauffmann
+        given-names: G.
+      - family-names: Heckman
+        given-names: T.
+    title: "The host galaxies and classification of active galactic nuclei"
+    journal: "Monthly Notices of the Royal Astronomical Society"
+    year: 2006
+    volume: 372
+    issue: 3
+    start: 961
+    end: 976
+    doi: "10.1111/j.1365-2966.2006.10859.x"
+  - type: article
+    authors:
+      - family-names: Brinchmann
+        given-names: J.
+      - family-names: Charlot
+        given-names: S.
+      - family-names: White
+        given-names: S. D. M.
+    title: "The physical properties of star-forming galaxies in the low-redshift Universe"
+    journal: "Monthly Notices of the Royal Astronomical Society"
+    year: 2004
+    volume: 351
+    issue: 4
+    start: 1151
+    end: 1179
+    doi: "10.1111/j.1365-2966.2004.07881.x"

@@ -1,13 +1,13 @@
 """
-Master Pipeline Runner: BPT Emission-Line Diagnostic & Anomaly Discovery (SDSS DR17).
+Master Pipeline Runner: BPT Emission-Line Diagnostic & Outlier Detection (SDSS DR17).
 Executes:
 1. Catalog query with signal-to-noise quality filtering
 2. Deterministic BPT classification (Kauffmann 2003, Kewley 2001)
 3. Anchor galaxy comparison (M51 vs. NGC 1068)
-4. Tri-Algorithmic Anomaly Detection (Isolation Forest, LOF, PCA Reconstruction)
-5. Physical Anomaly vs. Pipeline Glitch Disentanglement with 95% Confidence Intervals
-6. Top 20 Candidate Catalog generation and SkyServer navigation links
-7. Visual diagnostic figure generation (Classic BPT + Anomaly Discovery)
+4. Ensemble line-ratio outlier detection (Isolation Forest, LOF, PCA Reconstruction)
+5. Measurement fragility and uncertainty propagation with 95% Confidence Intervals
+6. Outlier Candidate Catalog generation and navigation links
+7. Visual diagnostic figure generation (Classic BPT + Outlier Diagnostics)
 """
 import sys
 import os
@@ -18,39 +18,55 @@ import numpy as np
 # Add src to module search path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-from query_data import query_sdss_catalog, ANCHOR_GALAXIES
+from query_data import query_sdss_catalog, ANCHOR_GALAXIES, fetch_anchor_ratios
 from bpt_math import classify_bpt
 from plot_bpt import plot_bpt_diagram
 from glitch_filter import (
     compute_line_snr,
     compute_error_propagation,
-    compute_glitch_and_confidence_scores,
+    compute_fragility_and_outlier_scores,
+    compute_boundary_sigma_distance,
 )
 from anomaly_detector import (
     detect_anomalies_tri_ensemble,
-    assign_physical_archetype,
+    assign_outlier_label,
+    stability_analysis,
 )
 from plot_anomalies import plot_bpt_anomalies
 
+# Candidate selection thresholds (reported verbatim in README)
+MAX_FRAGILITY = 0.25      # measurement_fragility <= this
+MIN_SNR = 10.0            # minimum rescaled S/N over the four lines
+MIN_VOTES = 2             # algorithms placing the object in their top 5%
+MIN_STABLE_RUNS_FRAC = 1.0  # fraction of stability runs with object in top-50
+
 def run_pipeline(
     sample_size=10000,
+    force_refresh=False,
     classic_plot="assets/bpt_diagnostic_sdss.png",
     anomaly_plot="assets/bpt_anomalies_sdss.png",
     candidates_csv="data/sdss_anomaly_candidates.csv",
     top_n_candidates=20
 ):
+    fetch_anchor_ratios()
     print("=" * 85)
-    print("SDSS DR17 BPT DIAGNOSTIC & TRI-ALGORITHMIC CELESTIAL ANOMALY DISCOVERY PIPELINE")
+    print("SDSS DR17 BPT DIAGNOSTIC & ENSEMBLE OUTLIER DETECTION PIPELINE")
     print("=" * 85)
 
     # 1. Fetch data
-    df = query_sdss_catalog(sample_size=sample_size)
-    print(f"\n[1] Loaded {len(df):,} galaxies meeting S/N >= 3 cut on all 4 lines.")
+    df = query_sdss_catalog(sample_size=sample_size, force_refresh=force_refresh)
+    print(f"\n[1] Loaded {len(df):,} galaxies meeting S/N >= 3 (MPA-JHU rescaled errors) on all 4 lines.")
 
     # 2. Deterministic BPT Classification
     log_nii_ha = df["log_nii_ha"].values
     log_oiii_hb = df["log_oiii_hb"].values
     df["bpt_class"] = classify_bpt(log_nii_ha, log_oiii_hb)
+
+    # 2b. Validate against the MPA-JHU reference classification
+    from bpt_math import validate_against_mpa_jhu
+    agreement, _ = validate_against_mpa_jhu(df)
+    if agreement < 0.95:
+        raise RuntimeError(f"Classifier disagrees with MPA-JHU bptclass on {1-agreement:.1%} of objects; investigate before publishing numbers.")
 
     # 3. Print Demographics Table
     print("\n" + "=" * 85)
@@ -85,15 +101,17 @@ def run_pipeline(
     print(f"\n[3] Generating classical BPT diagnostic figure -> {classic_plot}")
     plot_bpt_diagram(df, output_path=classic_plot)
 
-    # 6. Tri-Algorithmic Anomaly Detection
-    print("\n[4] Running Tri-Algorithmic Anomaly Ensemble (Isolation Forest + LOF + PCA Rec)...")
+    # 6. Outlier Detection
+    print("\n[4] Running Outlier Ensemble (Isolation Forest + LOF + PCA Rec)...")
     anomaly_df = detect_anomalies_tri_ensemble(df, random_state=42)
+    stab_df = stability_analysis(df)
     
-    # 7. Error Propagation & Glitch Disentanglement
+    # 7. Error Propagation & Fragility Disentanglement
     print("[5] Propagating line flux errors & calculating 95% Confidence Intervals...")
     snr_df = compute_line_snr(df)
     err_df = compute_error_propagation(df)
-    glitch_df = compute_glitch_and_confidence_scores(
+    bnd_df = compute_boundary_sigma_distance(df, err_df)
+    fragility_df = compute_fragility_and_outlier_scores(
         df,
         anomaly_df["consensus_anomaly_score"].values,
         snr_df,
@@ -101,19 +119,19 @@ def run_pipeline(
     )
 
     # Merge results
-    df_merged = pd.concat([df, anomaly_df, snr_df, err_df, glitch_df], axis=1)
+    df_merged = pd.concat([df, anomaly_df, stab_df, snr_df, err_df, bnd_df, fragility_df], axis=1)
 
-    # Assign physical archetype
-    df_merged["physical_archetype"] = assign_physical_archetype(
-        df_merged["log_nii_ha"].values,
-        df_merged["log_oiii_hb"].values,
-        df_merged["pipeline_glitch_risk"].values,
-        df_merged["physical_anomaly_confidence"].values
+    # Assign outlier labels
+    label_df = assign_outlier_label(
+        df_merged,
+        anomaly_df.attrs["X_scaled"],
+        df_merged["measurement_fragility"].values
     )
+    df_merged = pd.concat([df_merged, label_df], axis=1)
 
     # Add interactive SkyServer and DESI Legacy Survey links
     df_merged["skyserver_url"] = [
-        f"http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid={sid}"
+        f"https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid={sid}"
         for sid in df_merged["specObjID"]
     ]
     df_merged["legacy_survey_url"] = [
@@ -122,18 +140,30 @@ def run_pipeline(
     ]
 
     # Rank Candidates
-    # Top Physical: high physical_anomaly_confidence, low glitch risk (<= 50)
+    stability_cond = (
+        (df_merged["n_runs_in_top"] >= MIN_STABLE_RUNS_FRAC * df_merged["n_runs_total"])
+        if "n_runs_in_top" in df_merged.columns
+        else True
+    )
+    sel = (
+        (df_merged["measurement_fragility"] <= MAX_FRAGILITY)
+        & (df_merged["snr_min"] >= MIN_SNR)
+        & (df_merged["algorithm_votes"] >= MIN_VOTES)
+        & stability_cond
+    )
+    print(f"[Selection] {int(sel.sum()):,} objects pass fragility<= {MAX_FRAGILITY}, S/N>= {MIN_SNR}, "
+          f"votes>= {MIN_VOTES}")
     physical_candidates = (
-        df_merged[df_merged["pipeline_glitch_risk"] <= 50.0]
-        .sort_values(by="physical_anomaly_confidence", ascending=False)
+        df_merged[sel]
+        .sort_values(by="quality_weighted_outlier_score", ascending=False)
         .head(top_n_candidates)
         .copy()
     )
     physical_candidates["rank"] = range(1, len(physical_candidates) + 1)
 
-    # Control Glitches: high glitch risk (>= 60), high raw anomaly score (look anomalous purely due to noise)
+    # Control objects: high fragility (>= 0.65), high raw anomaly score (look anomalous purely due to noise)
     glitch_candidates = (
-        df_merged[df_merged["pipeline_glitch_risk"] >= 65.0]
+        df_merged[df_merged["measurement_fragility"] >= 0.65]
         .sort_values(by="consensus_anomaly_score", ascending=False)
         .head(10)
         .copy()
@@ -144,19 +174,28 @@ def run_pipeline(
         "rank", "specObjID", "ra", "dec", "z", "bpt_class",
         "log_nii_ha", "log_oiii_hb",
         "ci_95_nii_ha_str", "ci_95_oiii_hb_str",
-        "consensus_anomaly_score", "algorithm_votes",
-        "physical_anomaly_confidence", "pipeline_glitch_risk",
-        "snr_min", "physical_archetype", "skyserver_url", "legacy_survey_url"
+        "consensus_anomaly_score", "algorithm_votes", "n_runs_in_top",
+        "quality_weighted_outlier_score", "measurement_fragility",
+        "snr_min", "n_sigma_nearest_boundary", "class_robust_3sigma",
+        "bpt_region", "driving_feature", "driving_feature_robust_z",
+        "skyserver_url", "legacy_survey_url"
     ]
     os.makedirs(os.path.dirname(candidates_csv), exist_ok=True)
     physical_candidates[output_cols].to_csv(candidates_csv, index=False)
-    print(f"\n[6] Saved Top {top_n_candidates} Physical Anomaly Candidates catalog -> {candidates_csv}")
+    print(f"\n[6] Saved Top {top_n_candidates} Outlier Candidates catalog -> {candidates_csv}")
+
+    # Optional SIMBAD Cross-Match (resolves coordinates against CDS/Harvard mirrors)
+    try:
+        from crossmatch import crossmatch_candidates
+        simbad_df = crossmatch_candidates(physical_candidates)
+    except Exception as e:
+        print(f"[Crossmatch] skipped: {e}")
 
     # 8. Print Top 20 Candidates Table
     print("\n" + "=" * 105)
-    print(f"3. TOP {top_n_candidates} CONFIRMED PHYSICAL CELESTIAL ANOMALIES (SDSS DR17)")
+    print(f"3. TOP {top_n_candidates} LINE-RATIO OUTLIER CANDIDATES (SDSS DR17)")
     print("=" * 105)
-    header = f"{'Rank':<4} | {'SpecObjID':<19} | {'z':<6} | {'log([NII]/Hα)':<13} | {'log([OIII]/Hβ)':<14} | {'Votes':<5} | {'Score':<6} | {'PhysConf':<8} | {'Glitch%':<7} | {'Archetype':<26}"
+    header = f"{'Rank':<4} | {'SpecObjID':<19} | {'z':<6} | {'log([NII]/Hα)':<13} | {'log([OIII]/Hβ)':<14} | {'Votes':<5} | {'Score':<6} | {'QWScore':<8} | {'Fragil':<7} | {'Region':<26}"
     print(header)
     print("-" * 105)
     for _, row in physical_candidates.iterrows():
@@ -164,13 +203,13 @@ def run_pipeline(
             f"#{row['rank']:<3} | {row['specObjID']:<19} | {row['z']:<6.3f} | "
             f"{row['log_nii_ha']:<13.2f} | {row['log_oiii_hb']:<14.2f} | "
             f"{row['algorithm_votes']}/3   | {row['consensus_anomaly_score']:<6.1f} | "
-            f"{row['physical_anomaly_confidence']:<8.1f} | {row['pipeline_glitch_risk']:<7.1f} | "
-            f"{row['physical_archetype'][:26]:<26}"
+            f"{row['quality_weighted_outlier_score']:<8.1f} | {row['measurement_fragility']:<7.3f} | "
+            f"{row['bpt_region'][:26]:<26}"
         )
     print("=" * 105)
 
     # 9. Render Anomaly Plot
-    print(f"\n[7] Generating publication-grade Anomaly Diagnostic Figure -> {anomaly_plot}...")
+    print(f"\n[7] Generating Anomaly Diagnostic Figure -> {anomaly_plot}...")
     plot_bpt_anomalies(
         df=df_merged,
         top_physical=physical_candidates,
@@ -183,5 +222,6 @@ def run_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SDSS DR17 BPT & Anomaly Pipeline")
     parser.add_argument("--sample-size", type=int, default=10000, help="Number of galaxies to evaluate")
+    parser.add_argument("--force-refresh", action="store_true", help="Ignore local cache and re-query SkyServer")
     args = parser.parse_args()
-    run_pipeline(sample_size=args.sample_size)
+    run_pipeline(sample_size=args.sample_size, force_refresh=args.force_refresh)

@@ -1,0 +1,19 @@
+{
+  "source": {
+    "catalog": "J/ApJS/112/315",
+    "table": "table4",
+    "nii_col": "[NII]/Ha",
+    "oiii_col": "[OIII]/Hb",
+    "reference": "Ho, Filippenko & Sargent (1997, ApJS, 112, 315, Table 4)"
+  },
+  "anchors": {
+    "M51 / NGC 5194": {
+      "log_nii_ha": 0.07,
+      "log_oiii_hb": 0.22
+    },
+    "NGC 1068 / M77": {
+      "log_nii_ha": 0.17,
+      "log_oiii_hb": 1.1
+    }
+  }
+}

@@ -1,0 +1,5 @@
+run_utc,commit,n_rows_raw,n_rows_snr3,pct_sf,pct_composite,pct_agn,top20_overlap_with_previous,top20_median_z,notes
+2026-10-27T22:03:07Z,902d696,10000,9999,62.1,23.2,14.7,20,0.0487,Unfixed baseline at 902d696 (single stripe raw errors hard clipped)
+2026-10-27T22:13:01Z,1d51035,10000,10000,73.4,17.8,8.7,0,0.0527,Phase 3 re-run: full SDSS footprint hash ordered with MPA-JHU rescaled errors
+2026-10-28T07:43:00Z,087fa05,10000,10000,73.4,17.8,8.7,0,0.1192,Phase 4 re-run: 4 ratio-only features, 2-D 95% error ellipses, quality-weighted score, fragility filter
+2026-10-28T08:00:00Z,41fdf72,10000,10000,73.4,17.8,8.7,8,0.0450,Step 4.12 final Phase 4 run: 15-run stability filter, pytest test suite green, pinned deps

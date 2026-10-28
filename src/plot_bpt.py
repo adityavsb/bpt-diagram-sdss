@@ -15,9 +15,8 @@ from query_data import ANCHOR_GALAXIES
 def plot_bpt_diagram(df, output_path="assets/bpt_diagnostic_sdss.png"):
     log_nii_ha = df["log_nii_ha"].values
     log_oiii_hb = df["log_oiii_hb"].values
-
-    categories = classify_bpt(log_nii_ha, log_oiii_hb)
-    df["bpt_class"] = categories
+    if "bpt_class" not in df.columns:
+        df = df.assign(bpt_class=classify_bpt(log_nii_ha, log_oiii_hb))
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(15, 6.5), gridspec_kw={"width_ratios": [1.4, 1.0]})
@@ -32,18 +31,18 @@ def plot_bpt_diagram(df, output_path="assets/bpt_diagnostic_sdss.png"):
         log_nii_ha, log_oiii_hb,
         gridsize=65, cmap="magma",
         bins="log", mincnt=1,
-        extent=[-1.8, 0.6, -1.2, 1.4]
+        extent=[-2.3, 0.8, -1.5, 1.6]
     )
     cb = fig.colorbar(hb, ax=ax1, orientation="vertical", pad=0.02)
     cb.set_label(r"$\log_{10}(\mathrm{Galaxy\ Count\ per\ Bin})$", fontsize=11)
 
     # 1. Kauffmann (2003) Star-Formation Boundary
-    x_kauff = np.linspace(-1.8, 0.0, 300)
+    x_kauff = np.linspace(-2.3, 0.0, 300)
     y_kauff = kauffmann_boundary(x_kauff)
     ax1.plot(x_kauff, y_kauff, "k--", lw=2.2, label="Kauffmann et al. (2003) Pure Starburst Limit")
 
     # 2. Kewley (2001) Theoretical Extreme Starburst Upper Boundary
-    x_kewley = np.linspace(-1.8, 0.45, 300)
+    x_kewley = np.linspace(-2.3, 0.45, 300)
     y_kewley = kewley_boundary(x_kewley)
     ax1.plot(x_kewley, y_kewley, "k-", lw=2.5, label="Kewley et al. (2001) Extreme Starburst Limit")
 
@@ -78,8 +77,8 @@ def plot_bpt_diagram(df, output_path="assets/bpt_diagnostic_sdss.png"):
             ha=ha
         )
 
-    ax1.set_xlim(-1.8, 0.6)
-    ax1.set_ylim(-1.2, 1.4)
+    ax1.set_xlim(-2.3, 0.8)
+    ax1.set_ylim(-1.5, 1.6)
     ax1.set_xlabel(r"$\log_{10}([\mathrm{N\ II}]\,\lambda 6584 \,/\, \mathrm{H}\alpha)$", fontsize=12)
     ax1.set_ylabel(r"$\log_{10}([\mathrm{O\ III}]\,\lambda 5007 \,/\, \mathrm{H}\beta)$", fontsize=12)
     ax1.set_title(r"$\mathbf{BPT\ Emission\text{-}Line\ Diagnostic\ (SDSS\ DR17)}$", fontsize=13)

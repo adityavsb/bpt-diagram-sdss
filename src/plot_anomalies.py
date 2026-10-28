@@ -1,10 +1,10 @@
 """
-Publication-quality visualization for SDSS DR17 BPT Anomaly Detection.
+Visualization for SDSS DR17 BPT line-ratio outlier detection.
 Overlays:
 - 2D hexbin density of the bulk galaxy population
 - Kauffmann (2003) and Kewley (2001) demarcation curves
-- Top 20 Confirmed Physical Anomalies with 95% Confidence Interval error ellipses
-- Control Pipeline Glitches with large measurement jitter error bars
+- Top outlier candidates with 95% Confidence Interval error ellipses
+- Control high-fragility objects with large measurement error bars
 - Real anchor galaxies: M51 & NGC 1068
 """
 import os
@@ -25,7 +25,7 @@ def plot_bpt_anomalies(
     output_path: str = "assets/bpt_anomalies_sdss.png"
 ):
     """
-    Renders publication-ready figure of SDSS DR17 galaxy anomalies on BPT plane.
+    Renders figure of SDSS DR17 galaxy line-ratio outliers on BPT plane.
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
@@ -53,7 +53,7 @@ def plot_bpt_anomalies(
     cb.outline.set_edgecolor("#2D3748")
 
     # 2. Demarcation Boundary Lines
-    x_k03 = np.linspace(-1.5, 0.0, 300)
+    x_k03 = np.linspace(-2.3, 0.0, 300)
     y_k03 = kauffmann_boundary(x_k03)
     ax.plot(
         x_k03, y_k03,
@@ -62,7 +62,7 @@ def plot_bpt_anomalies(
         zorder=3
     )
 
-    x_k01 = np.linspace(-1.5, 0.42, 300)
+    x_k01 = np.linspace(-2.3, 0.42, 300)
     y_k01 = kewley_boundary(x_k01)
     ax.plot(
         x_k01, y_k01,
@@ -71,27 +71,27 @@ def plot_bpt_anomalies(
         zorder=3
     )
 
-    # 3. Control Pipeline Glitches (Demonstrate measurement error jitter)
+    # 3. Control high-fragility objects (Demonstrate measurement error jitter)
     if not top_glitches.empty:
         gx = top_glitches["log_nii_ha"].values
         gy = top_glitches["log_oiii_hb"].values
-        gdx = top_glitches["delta_x_95"].values
-        gdy = top_glitches["delta_y_95"].values
+        gdx = top_glitches["ellipse_95_semi_a"].values
+        gdy = top_glitches["ellipse_95_semi_b"].values
         
-        # Plot large error bars for pipeline glitches
+        # Plot large error bars for high-fragility objects
         ax.errorbar(
             gx, gy, xerr=gdx, yerr=gdy,
             fmt="x", color="#EF4444", ecolor="#EF4444", elinewidth=1.2,
             capsize=3, capthick=1.0, markersize=8, markeredgewidth=2.0,
-            alpha=0.75, label="Pipeline Glitches (Large 95% CI Error Jitter)",
+            alpha=0.75, label="High-fragility objects (large error ellipses)",
             zorder=4
         )
 
-    # 4. Top Physical Celestial Anomalies with 95% Confidence Ellipses
+    # 4. Top outlier candidates with 95% Confidence Ellipses
     px = top_physical["log_nii_ha"].values
     py = top_physical["log_oiii_hb"].values
-    pdx = top_physical["delta_x_95"].values
-    pdy = top_physical["delta_y_95"].values
+    pdx = top_physical["ellipse_95_semi_a"].values
+    pdy = top_physical["ellipse_95_semi_b"].values
     ranks = top_physical["rank"].values
 
     for i in range(len(top_physical)):
@@ -122,11 +122,11 @@ def plot_bpt_anomalies(
                 bbox=dict(boxstyle="round,pad=0.15", facecolor="#1E293B", edgecolor="#FDE047", alpha=0.85)
             )
 
-    # Scatter points for physical anomalies
+    # Scatter points for outlier candidates
     ax.scatter(
         px, py,
         marker="*", s=140, facecolors="#FFD700", edgecolors="#FFFFFF",
-        linewidths=0.9, label=r"Top 20 Physical Anomalies (Tight 95% CI)",
+        linewidths=0.9, label=r"Top candidates (2-D 95% error ellipse)",
         zorder=6
     )
 
@@ -158,21 +158,19 @@ def plot_bpt_anomalies(
     ax.text(-0.15, 0.05, "COMPOSITE\n(Star + AGN)",
             color="#CBD5E1", fontsize=9, style="italic", alpha=0.75, ha="center")
     
-    # Anomaly discovery arrows/tags
-    ax.text(-1.15, 0.95, "▲ GREEN PEA / EELG\nCANDIDATES",
-            color="#FDE047", fontsize=9, fontweight="bold", ha="left")
+
 
     # 7. Axis formatting & bounds
-    ax.set_xlim(-1.6, 0.6)
-    ax.set_ylim(-1.2, 1.4)
+    ax.set_xlim(-2.3, 0.8)
+    ax.set_ylim(-1.5, 1.6)
     ax.set_xlabel(r"$\log_{10}([\mathrm{N\ II}]\,\lambda 6584 \,/\, \mathrm{H}\alpha)$",
                   color="#F1F5F9", fontsize=13, labelpad=10)
     ax.set_ylabel(r"$\log_{10}([\mathrm{O\ III}]\,\lambda 5007 \,/\, \mathrm{H}\beta)$",
                   color="#F1F5F9", fontsize=13, labelpad=10)
     
     ax.set_title(
-        "SDSS DR17 Galaxy Diagnostics: Tri-Algorithmic Celestial Anomaly Detection\n"
-        r"Disentangling Physical Discoveries vs. Pipeline Glitches via 95% Confidence Intervals",
+        "SDSS (MPA-JHU) BPT plane: ensemble line-ratio outlier candidates\n"
+        "Isolation Forest + LOF + PCA residual, with 2-D 95% error ellipses",
         color="#F8FAFC", fontsize=14, fontweight="bold", pad=16
     )
 
@@ -190,13 +188,13 @@ def plot_bpt_anomalies(
 
     # 8. Methodology Annotation Box
     info_text = (
-        r"$\bf{Tri-Algorithmic\ Ensemble}$" + "\n"
+        r"$\bf{Three-Algorithm\ Ensemble}$" + "\n"
         "• Isolation Forest + LOF + PCA Rec\n"
         "• Equal-Weighted Consensus Voting\n"
-        r"$\bf{Glitch\ Disentanglement}$" + "\n"
+        r"$\bf{Measurement\ Fragility}$" + "\n"
         "• Analytical Gaussian Error Propagation\n"
-        "• 95% CI Ellipses (1.96σ)\n"
-        "• S/N Thresholding & Locus Overlap"
+        r"• 2-D 95% error ellipses (2.45σ, χ²₂)" + "\n"
+        "• Fragility filter + seed/k stability"
     )
     ax.text(
         0.98, 0.03, info_text,
