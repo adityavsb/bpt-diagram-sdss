@@ -129,37 +129,38 @@ def detect_anomalies_tri_ensemble(
     results["algorithm_votes"] = total_votes
     results.attrs["pca_n_components"] = n_comp
     results.attrs["pca_explained_variance_ratio"] = pca_full.explained_variance_ratio_.tolist()
+    results.attrs["X_scaled"] = X
     
     return results
 
-def assign_physical_archetype(
-    log_nii_ha: np.ndarray,
-    log_oiii_hb: np.ndarray,
-    glitch_risk: np.ndarray,
-    phys_conf: np.ndarray
-) -> list:
+def assign_outlier_label(df: pd.DataFrame, X_scaled: np.ndarray, fragility: np.ndarray) -> pd.DataFrame:
     """
-    Assigns an astrophysical archetype or pipeline glitch label based on
-    diagnostic position, physical confidence, and glitch risk.
+    Descriptive labels only. 'region' says where the object sits on the BPT plane;
+    'driving_feature' says which scaled feature deviates most from the sample
+    median (|robust z|). Neither asserts a physical mechanism; that requires
+    follow-up data ([S II]/[O I] ratios, kinematics, imaging, multiwavelength).
     """
-    archetypes = []
-    for x, y, gr, pc in zip(log_nii_ha, log_oiii_hb, glitch_risk, phys_conf):
-        if gr >= 0.75 and pc < 35.0:
-            archetypes.append("Suspected Pipeline Glitch / Measurement Artifact")
-        elif y >= 0.70 and x <= -0.70:
-            archetypes.append("Extreme Green Pea / EELG Candidate")
-        elif y >= 0.80 and x > 0.0:
-            archetypes.append("Extreme Seyfert / Fast Accretion Outflow")
-        elif y <= -0.45 and x >= 0.0:
-            archetypes.append("Under-Ionized LINER / Shock Front")
-        elif x >= 0.35:
-            archetypes.append("Nitrogen-Enriched Super-Solar System")
-        elif -0.30 <= x <= 0.10 and -0.10 <= y <= 0.45:
-            archetypes.append("Transition Composite / Intermediate Outlier")
-        elif y >= 0.90:
-            archetypes.append("Ultra-High Ionization Outlier")
-        elif x <= -1.10:
-            archetypes.append("Extremely Metal-Poor Galaxy (XMPG)")
-        else:
-            archetypes.append("Unconventional Emission Outlier")
-    return archetypes
+    x = df["log_nii_ha"].values
+    y = df["log_oiii_hb"].values
+    cls = df["bpt_class"].values
+
+    region = np.full(len(df), "Outlier at ordinary BPT position", dtype=object)
+    region[(cls == "AGN") & (y >= 0.9)] = "AGN region, very high [O III]/Hbeta (y >= 0.9)"
+    region[(cls == "AGN") & (x >= 0.35) & (y < 0.9)] = "AGN region, high [N II]/Halpha (x >= 0.35)"
+    region[(cls == "AGN") & (y <= -0.45) & (x >= 0.0)] = "AGN region, low [O III]/Hbeta (LINER-like ratios)"
+    region[(x <= -0.7) & (y >= 0.7)] = "Low [N II]/Halpha, high [O III]/Hbeta (Green-Pea-like ratios; unconfirmed)"
+    region[(x <= -1.1)] = "Very low [N II]/Halpha (metal-poor-like ratios; unconfirmed)"
+    region[(cls == "Composite") & (region == "Outlier at ordinary BPT position")] = "Composite region"
+    region[(cls == "Star-Forming") & (region == "Outlier at ordinary BPT position")] = "Star-forming region"
+    region[fragility >= 0.75] = "Suspected measurement artifact (high fragility)"
+
+    z = np.abs(X_scaled)  # RobustScaler output: (value - median) / IQR
+    drv_idx = np.argmax(z, axis=1)
+    driving = np.array(FEATURE_NAMES)[drv_idx]
+    driving_z = np.round(z[np.arange(len(df)), drv_idx], 2)
+
+    return pd.DataFrame({
+        "bpt_region": region,
+        "driving_feature": driving,
+        "driving_feature_robust_z": driving_z
+    }, index=df.index)

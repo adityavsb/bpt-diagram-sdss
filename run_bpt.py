@@ -29,7 +29,7 @@ from glitch_filter import (
 )
 from anomaly_detector import (
     detect_anomalies_tri_ensemble,
-    assign_physical_archetype,
+    assign_outlier_label,
 )
 from plot_anomalies import plot_bpt_anomalies
 
@@ -119,13 +119,13 @@ def run_pipeline(
     # Merge results
     df_merged = pd.concat([df, anomaly_df, snr_df, err_df, bnd_df, fragility_df], axis=1)
 
-    # Assign physical archetype
-    df_merged["physical_archetype"] = assign_physical_archetype(
-        df_merged["log_nii_ha"].values,
-        df_merged["log_oiii_hb"].values,
-        df_merged["measurement_fragility"].values,
-        df_merged["quality_weighted_outlier_score"].values
+    # Assign outlier labels
+    label_df = assign_outlier_label(
+        df_merged,
+        anomaly_df.attrs["X_scaled"],
+        df_merged["measurement_fragility"].values
     )
+    df_merged = pd.concat([df_merged, label_df], axis=1)
 
     # Add interactive SkyServer and DESI Legacy Survey links
     df_merged["skyserver_url"] = [
@@ -175,7 +175,8 @@ def run_pipeline(
         "consensus_anomaly_score", "algorithm_votes",
         "quality_weighted_outlier_score", "measurement_fragility",
         "snr_min", "n_sigma_nearest_boundary", "class_robust_3sigma",
-        "physical_archetype", "skyserver_url", "legacy_survey_url"
+        "bpt_region", "driving_feature", "driving_feature_robust_z",
+        "skyserver_url", "legacy_survey_url"
     ]
     os.makedirs(os.path.dirname(candidates_csv), exist_ok=True)
     physical_candidates[output_cols].to_csv(candidates_csv, index=False)
@@ -185,7 +186,7 @@ def run_pipeline(
     print("\n" + "=" * 105)
     print(f"3. TOP {top_n_candidates} LINE-RATIO OUTLIER CANDIDATES (SDSS DR17)")
     print("=" * 105)
-    header = f"{'Rank':<4} | {'SpecObjID':<19} | {'z':<6} | {'log([NII]/Hα)':<13} | {'log([OIII]/Hβ)':<14} | {'Votes':<5} | {'Score':<6} | {'QWScore':<8} | {'Fragil':<7} | {'Archetype':<26}"
+    header = f"{'Rank':<4} | {'SpecObjID':<19} | {'z':<6} | {'log([NII]/Hα)':<13} | {'log([OIII]/Hβ)':<14} | {'Votes':<5} | {'Score':<6} | {'QWScore':<8} | {'Fragil':<7} | {'Region':<26}"
     print(header)
     print("-" * 105)
     for _, row in physical_candidates.iterrows():
@@ -194,7 +195,7 @@ def run_pipeline(
             f"{row['log_nii_ha']:<13.2f} | {row['log_oiii_hb']:<14.2f} | "
             f"{row['algorithm_votes']}/3   | {row['consensus_anomaly_score']:<6.1f} | "
             f"{row['quality_weighted_outlier_score']:<8.1f} | {row['measurement_fragility']:<7.3f} | "
-            f"{row['physical_archetype'][:26]:<26}"
+            f"{row['bpt_region'][:26]:<26}"
         )
     print("=" * 105)
 
