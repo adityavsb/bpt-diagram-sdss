@@ -55,7 +55,12 @@ def to_percentile_score(raw_scores: np.ndarray) -> np.ndarray:
     ranks = rankdata(raw_scores, method="average")
     return np.round((ranks / len(raw_scores)) * 100.0, 2)
 
-def detect_anomalies_tri_ensemble(df: pd.DataFrame, random_state: int = 42) -> pd.DataFrame:
+def detect_anomalies_tri_ensemble(
+    df: pd.DataFrame,
+    random_state: int = 42,
+    lof_k: int = 35,
+    verbose: bool = True
+) -> pd.DataFrame:
     """
     Runs the Tri-Algorithmic Voting Ensemble on SDSS DR17 galaxies:
     1. Isolation Forest
@@ -72,7 +77,7 @@ def detect_anomalies_tri_ensemble(df: pd.DataFrame, random_state: int = 42) -> p
     # --- Algorithm 1: Isolation Forest ---
     iso = IsolationForest(
         n_estimators=250,
-        contamination=0.03,
+        contamination="auto",  # contamination only affects the discarded binary labels, not the scores
         max_samples="auto",
         random_state=random_state,
         n_jobs=-1
@@ -84,8 +89,8 @@ def detect_anomalies_tri_ensemble(df: pd.DataFrame, random_state: int = 42) -> p
     
     # --- Algorithm 2: Local Outlier Factor ---
     lof = LocalOutlierFactor(
-        n_neighbors=35,
-        contamination=0.03,
+        n_neighbors=lof_k,
+        contamination="auto",  # contamination only affects the discarded binary labels, not the scores
         n_jobs=-1
     )
     lof.fit_predict(X)
@@ -94,10 +99,16 @@ def detect_anomalies_tri_ensemble(df: pd.DataFrame, random_state: int = 42) -> p
     score_lof = to_percentile_score(raw_lof)
     
     # --- Algorithm 3: PCA Reconstruction Error ---
-    # Low-rank projection to capture 90%+ normal spectral manifold
-    pca = PCA(n_components=2, random_state=random_state)
-    X_pca = pca.fit_transform(X)
-    X_recon = pca.inverse_transform(X_pca)
+    # Choose the smallest number of components explaining >= 90% of variance,
+    # capped at d-1 so a residual always exists.
+    pca_full = PCA().fit(X)
+    cum = np.cumsum(pca_full.explained_variance_ratio_)
+    n_comp = int(min(max(1, np.searchsorted(cum, 0.90) + 1), X.shape[1] - 1))
+    pca = PCA(n_components=n_comp).fit(X)
+    if verbose:
+        print(f"[PCA] explained variance ratio per component: {np.round(pca_full.explained_variance_ratio_, 3)}; "
+              f"using {n_comp} component(s) (cumulative {cum[n_comp-1]:.3f})")
+    X_recon = pca.inverse_transform(pca.transform(X))
     raw_pca_err = np.linalg.norm(X - X_recon, axis=1)
     score_pca = to_percentile_score(raw_pca_err)
     
@@ -116,6 +127,8 @@ def detect_anomalies_tri_ensemble(df: pd.DataFrame, random_state: int = 42) -> p
     results["score_pca"] = score_pca
     results["consensus_anomaly_score"] = consensus_score
     results["algorithm_votes"] = total_votes
+    results.attrs["pca_n_components"] = n_comp
+    results.attrs["pca_explained_variance_ratio"] = pca_full.explained_variance_ratio_.tolist()
     
     return results
 
