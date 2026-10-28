@@ -6,7 +6,7 @@
 [![Survey](https://img.shields.io/badge/Survey-SDSS%20DR17%20%2F%20MPA--JHU-teal.svg)](https://www.sdss.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An observational astrophysics project implementing the landmark **Baldwin, Phillips & Terlevich (BPT, 1981)** emission-line diagnostic on ~10,000 galaxies from the **Sloan Digital Sky Survey**, using the MPA-JHU emission-line measurements (Brinchmann et al. 2004) of SDSS Legacy spectra as distributed in the `galSpecLine` table of **SDSS DR17**.
+An observational astrophysics project implementing the **Baldwin, Phillips & Terlevich (BPT, 1981)** emission-line diagnostic on ~10,000 galaxies from the **Sloan Digital Sky Survey**, using the MPA-JHU emission-line measurements (Brinchmann et al. 2004) of SDSS Legacy spectra as distributed in the `galSpecLine` table of **SDSS DR17**.
 
 The project investigates a fundamental question in extragalactic astronomy:  
 *How do we know whether a galaxy’s glow is driven by newborn stars or by a feeding supermassive black hole?*
@@ -63,7 +63,7 @@ $$
    Galaxies situated between the Kauffmann (2003) and Kewley (2001) curves exhibit intermediate line ratios resulting from mixed excitation—typically stellar nurseries co-existing with weak nuclear activity or low-velocity shocks.
 
 > [!NOTE]
-> **On Seyfert vs. LINER Separation**: In the literature, Kewley et al. (2006, Eq. 1) established the division $\log_{10}([\text{O III}]/\text{H}\beta) = 1.89 \log_{10}([\text{S II}]/\text{H}\alpha) + 0.76$ specifically for the optical $[\text{S II}]/\text{H}\alpha$ diagnostic diagram (and Eq. 2 for $[\text{O I}]/\text{H}\alpha$). On the standard 4-line $[\text{N II}]/\text{H}\alpha$ diagram, Seyferts and LINERs overlap significantly without a clean bimodal valley. Therefore, standard spectroscopic practice employs the canonical 3-class demarcation (**Star-Forming, Composite, AGN**), reserving fine-grained Seyfert vs. LINER separation for multi-line $[\text{S II}]$, $[\text{O I}]$, or WHAN diagrams.
+> **On Seyfert vs. LINER separation.** Kewley et al. (2006) draw the Seyfert/LINER line on the [S II]/Hα and [O I]/Hα diagrams (their Eqs. 1–2), where the two populations separate most cleanly; on the [N II]/Hα diagram they overlap more. [N II]-only separations do exist — Schawinski et al. (2007): $\log([\text{O III}]/\text{H}\beta) = 1.05\,\log([\text{N II}]/\text{H}\alpha) + 0.45$; Cid Fernandes et al. (2010): $1.01\,x + 0.48$ — and the WHAN diagram (Cid Fernandes et al. 2010) separates true LINERs from "retired" galaxies ionised by old stars. This project follows Kewley et al. (2006) and reports three classes; adding [S II] and [O I] is the planned Iteration 3.
 
 ---
 
@@ -76,6 +76,10 @@ Selection: `class = GALAXY`, `zWarning = 0`, `sciencePrimary = 1`, MPA-JHU `reli
 | **Star-Forming** | `7,344` | **`73.4%`** | Photoionization by short-lived OB stars in stellar nurseries |
 | **Composite** | `1,783` | **`17.8%`** | Transition systems undergoing simultaneous starbursts and AGN accretion |
 | **AGN** | `873` | **`8.7%`** | Hard power-law ionizing radiation from supermassive black hole accretion / shocks |
+
+### Validation against MPA-JHU
+
+Cross-tabulating our classification against the official MPA-JHU `bptclass` column (`galSpecExtra`) across the 10,000 galaxies yields 100.0% agreement (7,344 Star-Forming, 1,783 Composite, 873 AGN; see `data/classifier_validation.csv`).
 
 ![BPT Diagnostic Diagram](assets/bpt_diagnostic_sdss.png)
 
@@ -100,24 +104,29 @@ bpt-diagram-sdss/
 +-- PLAN.md                 # Technical architecture & astrophysics plan
 +-- CITATION.cff            # Citation metadata for academic and open-source citing
 +-- REFERENCES.bib          # NASA/ADS BibTeX database for LaTeX / paper references
++-- NOTES.md                # Working notes, decisions, and corrections
 +-- LICENSE                 # MIT License
 +-- .gitignore              # Defense-in-depth rules (excludes FITS caches & secrets)
 +-- requirements.txt        # astropy, astroquery, pandas, matplotlib, numpy, scikit-learn
 +-- src/
-|   +-- bpt_math.py         # Boundary equations (Kauffmann 2003, Kewley 2001, Kewley 2006 reference)
+|   +-- bpt_math.py         # Boundary equations and MPA-JHU validation
 |   +-- query_data.py       # SDSS DR17 query & local caching with quality cuts
 |   +-- plot_bpt.py         # 2D hexbin density visualization & demographics generator
 |   +-- glitch_filter.py    # Analytical Gaussian error propagation & 95% CI modeling
-|   +-- anomaly_detector.py # Tri-algorithmic ensemble (iForest + LOF + PCA) & voting
-|   \-- plot_anomalies.py   # Publication-quality anomaly diagnostic map
+|   +-- anomaly_detector.py # Ensemble outlier detector (iForest + LOF + PCA) & stability
+|   +-- crossmatch.py       # Automated SIMBAD cross-match resolver via astroquery
+|   \-- plot_anomalies.py   # Anomaly diagnostic map with 2-D error ellipses
 +-- assets/
 |   +-- bpt_diagnostic_sdss.png # Classical BPT diagram
-|   \-- bpt_anomalies_sdss.png  # Anomaly detection & 95% CI error ellipses
+|   \-- bpt_anomalies_sdss.png  # Outlier detection diagnostic map
 +-- data/
-|   +-- sdss_bpt_sample.csv          # Tracked sample of 10,000 galaxies (reproducibility)
-|   +-- sdss_anomaly_candidates.csv  # Outlier candidates for follow-up (high ML consensus, low fragility)
-|   +-- classifier_validation.csv    # Cross-tabulation vs. official MPA-JHU bptclass (100% agreement)
-|   \-- anchor_galaxies.json         # Palomar HFS97 nuclear emission line ratios
+|   +-- sdss_bpt_sample.csv                  # Tracked sample of 10,000 galaxies (reproducibility)
+|   +-- sdss_anomaly_candidates.csv          # Outlier candidates for follow-up (high ML consensus, low fragility)
+|   +-- sdss_anomaly_candidates_simbad.csv   # SIMBAD cross-match results and reference counts
+|   +-- classifier_validation.csv            # Cross-tabulation vs. official MPA-JHU bptclass (100% agreement)
+|   +-- anomaly_stability.csv                # Stability across 15 (seed, k) runs
+|   \-- anchor_galaxies.json                 # Palomar HFS97 nuclear emission line ratios
+# Derived from public SDSS DR17 / MPA-JHU catalog data; redistributed under the SDSS data policy with the acknowledgements below.
 \-- run_bpt.py              # Master pipeline runner (Classical BPT + Outlier Detection)
 ```
 
@@ -125,11 +134,11 @@ bpt-diagram-sdss/
 
 ## Iteration 2: Ensemble line-ratio outlier detection
 
-Classical demarcation curves partition the diagram; objects far from the bulk population in line-ratio space are worth a second look, whether because of unusual physics or because of measurement problems. Iteration 2 ranks objects by how unusual their *line ratios* are, using three unsupervised detectors on four distance-independent features: $\log([\text{N II}]/\text{H}\alpha)$, $\log([\text{O III}]/\text{H}\beta)$, $\log(\text{H}\alpha/\text{H}\beta)$ and $\log \text{EW}(\text{H}\alpha)$. Absolute fluxes are excluded on purpose. The output is a **candidate list for follow-up**, not a list of discoveries.
+Classical demarcation curves partition the diagram; objects far from the bulk population in line-ratio space are worth a second look, whether because of unusual physics or because of measurement problems. Iteration 2 ranks objects by how unusual their *line ratios* are, using three unsupervised detectors on four distance-independent features: $\log([\text{N II}]/\text{H}\alpha)$, $\log([\text{O III}]/\text{H}\beta)$, $\log(\text{H}\alpha/\text{H}\beta)$ and $\log \text{EW}(\text{H}\alpha)$. Absolute fluxes are excluded on purpose. The output is a **candidate list for follow-up**, not a list of new astrophysical claims.
 
 ![SDSS DR17 BPT Anomaly Detection](assets/bpt_anomalies_sdss.png)
 
-### 1. The Tri-Algorithmic Voting Ensemble
+### 1. The Three-Algorithm Voting Ensemble
 
 To eliminate single-algorithm bias, we employ an equal-weighted consensus ensemble across three complementary unsupervised paradigms:
 1. **Isolation Forest (`iForest`)**: Measures path-partitioning depth in feature space to identify global spectral outliers.
@@ -159,92 +168,54 @@ $$
 * **`n_sigma_nearest_boundary`:** distance, in units of the object's own σ, to the nearest demarcation curve. Objects with ≥ 3 keep their class under a 3σ fluctuation.
 * **Stability:** the ensemble is re-run for 5 Isolation Forest seeds × 3 LOF neighbourhood sizes; a candidate must be in the top 50 in every run.
 
+#### Stability across seeds and neighbourhoods
+
+Evaluating the ensemble across 15 runs (5 Isolation Forest seeds × 3 LOF neighbourhood sizes $k \in \{20, 35, 50\}$) yields a mean pairwise Spearman correlation of 0.990 and mean top-50 Jaccard overlap of 0.893 (see `data/anomaly_stability.csv`). 42 galaxies appear in the top 50 in all 15 runs.
+
 ### 3. Top outlier candidates for follow-up
 
-Selection: `measurement_fragility <= 0.25`, minimum rescaled S/N >= 10, >= 2 of 3 algorithm votes, stable in 15/15 runs; ranked by `quality_weighted_outlier_score`. These are statistically unusual line-ratio combinations; none has been confirmed as physically unusual by this project.
+Selection: `measurement_fragility <= 0.25`, minimum rescaled S/N >= 10, >= 2 of 3 algorithm votes, stable in 15/15 runs; ranked by `quality_weighted_outlier_score`. These are statistically unusual line-ratio combinations; none has been verified as physically unusual by this project.
 
 | Rank | SpecObjID | z | log([N II]/Hα) | log([O III]/Hβ) | 1-D 95% CI | Consensus | QW score | Fragility | n_σ boundary | BPT region | Driving feature | Links |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- | :--- | :--- |
-| **#1** | `1522331895189235712` | `0.235` | `-0.17` | `+0.93` | `[-0.20, -0.14]`, `[0.89, 0.96]` | `99.6` | **`99.0`** | `0.007` | `30.8σ` | AGN region, very high [O III]/Hbeta (y >= 0.9) | `log_oiii_hb` (z=+2.35) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1522331895189235712) • [Legacy](https://www.legacysurvey.org/viewer?ra=225.57194&dec=38.05195&layer=ls-dr10&zoom=15) |
-| **#2** | `2237320683103217664` | `0.033` | `-1.58` | `+0.61` | `[-1.64, -1.52]`, `[0.59, 0.63]` | `98.5` | **`97.6`** | `0.009` | `22.0σ` | Very low [N II]/Halpha (metal-poor-like ratios; unconfirmed) | `log_nii_ha` (z=+4.75) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2237320683103217664) • [Legacy](https://www.legacysurvey.org/viewer?ra=192.81909&dec=35.11345&layer=ls-dr10&zoom=15) |
-| **#3** | `2293593682860861440` | `0.230` | `-0.97` | `+0.52` | `[-1.00, -0.93]`, `[0.51, 0.54]` | `97.5` | **`97.1`** | `0.004` | `12.2σ` | Star-forming region | `log_ew_ha` (z=+3.12) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2293593682860861440) • [Legacy](https://www.legacysurvey.org/viewer?ra=170.60098&dec=37.76703&layer=ls-dr10&zoom=15) |
-| **#4** | `1432306634738132992` | `0.176` | `-0.35` | `+0.17` | `[-0.37, -0.33]`, `[0.13, 0.20]` | `97.5` | **`97.0`** | `0.005` | `11.1σ` | Composite region | `log_ew_ha` (z=+2.31) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1432306634738132992) • [Legacy](https://www.legacysurvey.org/viewer?ra=137.25270&dec=33.43255&layer=ls-dr10&zoom=15) |
-| **#5** | `1679928197229078528` | `0.039` | `-0.65` | `+0.16` | `[-0.72, -0.58]`, `[0.09, 0.23]` | `97.6` | **`94.1`** | `0.036` | `4.1σ` | Star-forming region | `log_ew_ha` (z=+1.99) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1679928197229078528) • [Legacy](https://www.legacysurvey.org/viewer?ra=4.00171&dec=-0.30269&layer=ls-dr10&zoom=15) |
-| **#6** | `2247426838710216704` | `0.035` | `-1.71` | `+0.66` | `[-1.78, -1.63]`, `[0.64, 0.68]` | `99.5` | **`91.1`** | `0.085` | `18.6σ` | Very low [N II]/Halpha (metal-poor-like ratios; unconfirmed) | `log_nii_ha` (z=+5.29) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2247426838710216704) • [Legacy](https://www.legacysurvey.org/viewer?ra=171.18009&dec=39.76517&layer=ls-dr10&zoom=15) |
-| **#7** | `512391142269020160` | `0.031` | `-0.62` | `+0.86` | `[-0.70, -0.53]`, `[0.78, 0.94]` | `97.7` | **`85.0`** | `0.130` | `5.2σ` | Outlier at ordinary BPT position | `log_oiii_hb` (z=+2.21) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=512391142269020160) • [Legacy](https://www.legacysurvey.org/viewer?ra=38.29496&dec=-7.80372&layer=ls-dr10&zoom=15) |
-| **#8** | `2518725292126660608` | `0.051` | `-0.35` | `-0.82` | `[-0.38, -0.33]`, `[-0.91, -0.74]` | `96.9` | **`80.8`** | `0.166` | `8.2σ` | Star-forming region | `log_oiii_hb` (z=+1.29) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2518725292126660608) • [Legacy](https://www.legacysurvey.org/viewer?ra=188.59066&dec=29.65590&layer=ls-dr10&zoom=15) |
+| **#1** | `1522331895189235712` | `0.235` | `-0.17` | `+0.93` | `[-0.20, -0.14]`, `[0.89, 0.96]` | `99.6` | **`99.0`** | `0.007` | `30.8σ` | AGN region, very high [O III]/Hbeta (y >= 0.9) | `log_oiii_hb` (z=+2.35) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1522331895189235712) • [Legacy](https://www.legacysurvey.org/viewer?ra=225.57194&dec=38.05195&layer=ls-dr10&zoom=15) |
+| **#2** | `2237320683103217664` | `0.033` | `-1.58` | `+0.61` | `[-1.64, -1.52]`, `[0.59, 0.63]` | `98.5` | **`97.6`** | `0.009` | `22.0σ` | Very low [N II]/Halpha (low [N II]/Hα; unverified) | `log_nii_ha` (z=+4.75) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2237320683103217664) • [Legacy](https://www.legacysurvey.org/viewer?ra=192.81909&dec=35.11345&layer=ls-dr10&zoom=15) |
+| **#3** | `2293593682860861440` | `0.230` | `-0.97` | `+0.52` | `[-1.00, -0.93]`, `[0.51, 0.54]` | `97.5` | **`97.1`** | `0.004` | `12.2σ` | Star-forming region | `log_ew_ha` (z=+3.12) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2293593682860861440) • [Legacy](https://www.legacysurvey.org/viewer?ra=170.60098&dec=37.76703&layer=ls-dr10&zoom=15) |
+| **#4** | `1432306634738132992` | `0.176` | `-0.35` | `+0.17` | `[-0.37, -0.33]`, `[0.13, 0.20]` | `97.5` | **`97.0`** | `0.005` | `11.1σ` | Composite region | `log_ew_ha` (z=+2.31) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1432306634738132992) • [Legacy](https://www.legacysurvey.org/viewer?ra=137.25270&dec=33.43255&layer=ls-dr10&zoom=15) |
+| **#5** | `1679928197229078528` | `0.039` | `-0.65` | `+0.16` | `[-0.72, -0.58]`, `[0.09, 0.23]` | `97.6` | **`94.1`** | `0.036` | `4.1σ` | Star-forming region | `log_ew_ha` (z=+1.99) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1679928197229078528) • [Legacy](https://www.legacysurvey.org/viewer?ra=4.00171&dec=-0.30269&layer=ls-dr10&zoom=15) |
+| **#6** | `2247426838710216704` | `0.035` | `-1.71` | `+0.66` | `[-1.78, -1.63]`, `[0.64, 0.68]` | `99.5` | **`91.1`** | `0.085` | `18.6σ` | Very low [N II]/Halpha (low [N II]/Hα; unverified) | `log_nii_ha` (z=+5.29) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2247426838710216704) • [Legacy](https://www.legacysurvey.org/viewer?ra=171.18009&dec=39.76517&layer=ls-dr10&zoom=15) |
+| **#7** | `512391142269020160` | `0.031` | `-0.62` | `+0.86` | `[-0.70, -0.53]`, `[0.78, 0.94]` | `97.7` | **`85.0`** | `0.130` | `5.2σ` | Outlier at ordinary BPT position | `log_oiii_hb` (z=+2.21) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=512391142269020160) • [Legacy](https://www.legacysurvey.org/viewer?ra=38.29496&dec=-7.80372&layer=ls-dr10&zoom=15) |
+| **#8** | `2518725292126660608` | `0.051` | `-0.35` | `-0.82` | `[-0.38, -0.33]`, `[-0.91, -0.74]` | `96.9` | **`80.8`** | `0.166` | `8.2σ` | Star-forming region | `log_oiii_hb` (z=+1.29) | [SDSS](https://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2518725292126660608) • [Legacy](https://www.legacysurvey.org/viewer?ra=188.59066&dec=29.65590&layer=ls-dr10&zoom=15) |
 
 *Full candidate catalog exported with complete coordinates and multi-wavelength links in [`data/sdss_anomaly_candidates.csv`](data/sdss_anomaly_candidates.csv).*
 
 ---
 
-## Astrophysical Literature Survey: Top 5 Anomalies Deep-Dive
+## What SIMBAD says about the top candidates
 
-To rigorously evaluate our unsupervised machine learning methodology, we cross-matched our top physical anomaly candidates against the **NASA/IPAC Extragalactic Database (NED)** and the **Sloan Digital Sky Survey (SDSS DR17)** spectroscopic archive.
+The table below is generated from `data/sdss_anomaly_candidates_simbad.csv` (5″ cone match, queried 2026-10-28). "Driving feature" is the scaled feature that deviates most from the sample median for that object (see §Iteration 2). Where a published paper discusses the object individually, it is cited; catalog-level inclusions are not described as studies of the object.
 
-Beyond algorithmic scores, each candidate corresponds to an established or emerging object of intense astrophysical interest:
+| Rank | SIMBAD main ID | SIMBAD type | z | BPT region | Driving feature (standardized z) | SIMBAD refs | Notes |
+| :---: | :--- | :--- | :---: | :--- | :--- | :---: | :--- |
+| **#1** | `2MASS J15021725+3803069` | Sy2 | `0.235` | AGN region, very high [O III]/Hbeta (y >= 0.9) | `log_oiii_hb` (+2.35) | 7 | Seyfert 2 (SIMBAD). Optically selected Type 2 quasar candidate studied in Reyes et al. (2008) and Kong & Ho (2018). Radio-detected in FIRST. |
+| **#2** | `LEDA 4572013` | EmG | `0.033` | Very low [N II]/Halpha (low [N II]/Hα; unverified) | `log_nii_ha` (+4.75) | 6 | Emission-line galaxy (SIMBAD; HS 1248+3523 in Hopp et al. 2000). Cataloged in the ALFALFA H I survey (Haynes et al. 2018). Extremely low [N II]/Hα. |
+| **#3** | *No cross-match* | -- | `0.230` | Star-forming region | `log_ew_ha` (+3.12) | 0 | No cross-match within 5″ in SIMBAD. High equivalent width Hα emission in an otherwise standard star-forming locus. |
+| **#4** | *No cross-match* | -- | `0.176` | Composite region | `log_ew_ha` (+2.31) | 0 | No cross-match within 5″ in SIMBAD. Sits in composite transition track; flagged for elevated equivalent width Hα. |
+| **#5** | *No cross-match* | -- | `0.039` | Star-forming region | `log_ew_ha` (+1.99) | 0 | No cross-match within 5″ in SIMBAD. Low-redshift star-forming galaxy flagged for elevated equivalent width Hα. |
+| **#6** | *No cross-match* | -- | `0.035` | Very low [N II]/Halpha (low [N II]/Hα; unverified) | `log_nii_ha` (+5.29) | 0 | No cross-match within 5″ in SIMBAD. Extreme low-metallicity line ratio signature (log([N II]/Hα) = -1.71). |
+| **#7** | `2MASX J02331076-0748131` | Sy2 | `0.031` | Outlier at ordinary BPT position | `log_oiii_hb` (+2.21) | 16 | Seyfert 2 (SIMBAD). Identified as harboring a low-mass black hole in Greene & Ho (2007) and Jiang et al. (2011). X-ray source in Chandra survey (Bi et al. 2020). |
+| **#8** | `2MASX J12342176+2939215` | SBG | `0.051` | Star-forming region | `log_oiii_hb` (+1.29) | 11 | Starburst galaxy with morphological type Sc (SIMBAD). Cataloged in KPNO International Spectroscopic Survey (KISSR 78; Salzer et al. 2001, Wegner et al. 2003). |
 
-```text
-+-------+-------------------------+---------+--------------+------------------------------------------------------+
-| Rank  | Target Common Name      | Type    | Primary S/N  | Key Astrophysical Discovery                          |
-+-------+-------------------------+---------+--------------+------------------------------------------------------+
-| #1    | CGCG 011-088            | Seyfert | 56.9         | Rare double-ring galaxy with nuclear rejuvenation    |
-| #2    | SDSS J150754.38+010816.7| IMBH    | 40.5         | Intermediate-mass black hole candidate with radio jet|
-| #3    | SDSS J101653.82+002857.0| QSO     | 40.2         | HST Feedback Survey target clearing molecular gas    |
-| #4    | CGCG 021-096 (LIRG)     | AGN     | 57.0         | Infrared-luminous obscured AGN with massive torus    |
-| #5    | UM 643                  | Starburst| 45.4        | Historic Michigan objective-prism starburst spiral   |
-+-------+-------------------------+---------+--------------+------------------------------------------------------+
-```
+**Rules used to write the Notes column** (kept here so readers can judge them): (1) a paper is cited only if its bibcode is in SIMBAD's reference list for the object *and* the paper's text discusses the object individually; (2) survey membership is stated with the paper that defines the sample; (3) no physical mechanism (outflow, torus, IMBH, rejuvenation) is asserted unless a cited paper asserts it for this object; (4) morphology comes from SIMBAD's `morphtype` field with its reference.
 
-### 1. Rank #1: CGCG 011-088 (The Nuclear Rejuvenation Ring Galaxy)
-* **Coordinates:** RA 171.03603 deg (11h 24m 08.6s), Dec -1.15776 deg (-01 deg 09 min 28 sec) | **z = 0.0293** (~125 Mpc)
-* **Catalog Identifiers:** CGCG 011-088, Z 11-88, MCG +00-29-027, LEDA 35016, 2MASX J11240862-0109277.
-* **What the Literature Discovered (53 papers in NED):**
-  * Morphologically identified in the *Comprehensive de Vaucouleurs revised Hubble-Sandage (CVRHS)* system and *Galaxy Zoo 2* as a prominent **(R'_2)SAB(r:)a resonance ring galaxy** containing both inner and outer stellar rings.
-  * Martin-Navarro et al. (2022, *MNRAS Letters*, 513, L10) identified it as a hallmark case of **nuclear rejuvenation**: non-axisymmetric ring torques channel fresh gas into the central core, reigniting black hole accretion after a quiescent period.
-* **Why Our ML Algorithm Caught It:**
-  * Sits abnormally high on the Seyfert wing (**log₁₀([O III] / Hβ) = +0.84**) despite moderate nitrogen metallicity (**log₁₀([N II] / Hα) = -0.10**).
-  * Exceptionally clean emission profile with minimum line S/N of 56.9 and tight 95% CI error bounds (width < 0.04 dex), earning 3/3 unanimous algorithm votes as an unconventional high-confidence emission outlier.
+## Scope and limitations
 
-### 2. Rank #2: SDSS J150754.38+010816.7 (Intermediate-Mass Black Hole Candidate)
-* **Coordinates:** RA 226.97660 deg (15h 07m 54.4s), Dec +1.13799 deg (+01 deg 08 min 17 sec) | **z = 0.0610** (~260 Mpc)
-* **Catalog Identifiers:** 2MASX J15075440+0108168, WISEA J150754.38+010816.8, FIRST J150754.3+010816, NVSS J150754+010812, [VV2006c] J150754.4+010816.
-* **What the Literature Discovered (42 papers in NED):**
-  * Highlighted in observational surveys as harboring an **Intermediate-Mass Black Hole (IMBH) candidate** with an estimated central black hole mass of only **M_BH ≈ 1.4 × 10⁶ M_☉** (orders of magnitude lighter than normal quasar engines).
-  * Lin et al. (2018, *The Astronomical Journal*, 155, 188) investigated its low-power relativistic radio core detected in the VLA FIRST survey, analyzing the accretion mode powering its nuclear jets.
-* **Why Our ML Algorithm Caught It:**
-  * Flagged as an **Ultra-High Ionization Outlier**: **log₁₀([O III] / Hβ) = +1.13** (in this sample, log₁₀([O III] / Hβ) = +1.13 sits in the top 0.1% of high-excitation emitters).
-  * Accretion onto a lower-mass black hole at high Eddington ratios generates an intense, hard UV ionizing radiation field that super-excites forbidden [O III] relative to standard Seyferts.
-
-### 3. Rank #3: SDSS J101653.82+002857.0 (The HST Quasar Feedback Target)
-* **Coordinates:** RA 154.22425 deg (10h 16m 53.8s), Dec +0.48254 deg (+00 deg 28 min 57 sec) | **z = 0.1163** (~520 Mpc)
-* **Catalog Identifiers:** WISEA J101653.82+002856.7, 2MASX J10165384+0028571, LEDA 1167114, NVSS J101653+002858, [VV2010c] J101653.9+002857.
-* **What the Literature Discovered (38 papers in NED):**
-  * Officially cataloged in NED as a **QSO (Quasar)** and a **High-Excitation Radio Galaxy (HERG)**.
-  * Selected for ultraviolet spectroscopic observation with the **Hubble Space Telescope (HST Cosmic Origins Spectrograph - COS)**.
-  * Molyneux et al. (2024, *MNRAS*, 527, 4420) featured this system in *The Quasar Feedback Survey*, utilizing ALMA and CO line transitions to map energetic molecular gas outflows clearing star-forming fuel from the galaxy.
-* **Why Our ML Algorithm Caught It:**
-  * Shows intense [O III] emission (**log₁₀([O III] / Hβ) = +1.00**) coupled with low nitrogen (**log₁₀([N II] / Hα) = -0.34**).
-  * Yields massive PCA reconstruction residuals because energetic quasar wind kinematics distort the standard 4-line emission manifold.
-
-### 4. Rank #4: CGCG 021-096 / IRAS 15240+0046 (The Luminous Infrared AGN)
-* **Coordinates:** RA 231.65696 deg (15h 26m 37.7s), Dec +0.59264 deg (+00 deg 35 min 34 sec) | **z = 0.0507** (~220 Mpc)
-* **Catalog Identifiers:** CGCG 021-096, Z 21-96, IRAS 15240+0046, IRAS F15240+0045, LEDA 55103, FIRST J152637.6+003534, [VV2010c] J152637.7+003534.
-* **What the Literature Discovered (59 papers in NED):**
-  * Discovered in the IRAS satellite mission as a **Luminous Infrared Galaxy (LIRG)**, powered by an active galactic nucleus buried inside dense, warm interstellar dust clouds.
-  * Ramos Padilla et al. (2022, *MNRAS*, 510, 687) studied its Spectral Energy Distribution (SED) and obscuring torus geometry.
-* **Why Our ML Algorithm Caught It:**
-  * Simultaneously exhibits extreme high-excitation emission (**log₁₀([O III] / Hβ) = +0.98**) and substantial dust extinction (large Balmer decrement **Hα / Hβ**), causing it to diverge strongly from pure optical starburst models.
-
-### 5. Rank #5: UM 643 (Historic University of Michigan Survey Starburst)
-* **Coordinates:** RA 212.61180 deg (14h 10m 26.8s), Dec -0.83238 deg (-00 deg 49 min 57 sec) | **z = 0.0254** (~110 Mpc)
-* **Catalog Identifiers:** UM 643, CGCG 018-065, Z 18-65, MCG +00-36-027, PGC 50604, 2MASX J14102685-0049563.
-* **What the Literature Discovered (55 papers in NED):**
-  * Discovered in the landmark University of Michigan (UM) objective-prism survey for unusual optical emission-line objects.
-  * Morphologically identified as an energetic barred starburst spiral (`SB/SBR`) with radio continuum emission cataloged in Condon et al. (2019/2022, *ApJ*, 872, 148).
-* **Why Our ML Algorithm Caught It:**
-  * Unlike the other top candidates (which are high-ionization AGN), UM 643 is an **unconventional composite transition outlier** (**log₁₀([O III] / Hβ) = -0.38**, **log₁₀([N II] / Hα) = -0.25**).
-  * It occupies the sparse transition valley between the pure starburst locus and the AGN plume. Local Outlier Factor (LOF) flagged it due to its sparse local neighborhood density.
+* **What this is:** a reproducible implementation of the [N II]/Hα BPT classification on a hash-ordered sample of SDSS Legacy galaxies with MPA-JHU line measurements, plus an unsupervised ranking of unusual line-ratio combinations with propagated uncertainties.
+* **What this is not:** a paper claiming new astrophysical sources. No candidate has been followed up; "outlier" means statistically unusual relative to this sample in four line-derived features, not verified through dedicated observations.
+* **Known approximations:** errors in the two ratios are treated as uncorrelated; the MPA-JHU error rescaling factors are sample-wide averages; the fragility score is a hand-tuned heuristic; the sample is 10,000 objects, not the full survey.
+* **Validation performed:** agreement with the MPA-JHU `bptclass` column (`data/classifier_validation.csv`); seed/neighbourhood stability of the outlier ranking (`data/anomaly_stability.csv`); SIMBAD cross-match of candidates (`data/sdss_anomaly_candidates_simbad.csv`); unit tests (`pytest`).
+* **Literature statements** about individual candidates are limited to papers that SIMBAD associates with the object and that discuss it individually; see §What SIMBAD says about the top candidates.
+* **Working notes:** See [`NOTES.md`](NOTES.md) for dated notes on design decisions, corrections, and dropped candidates.
 
 ---
 
@@ -265,12 +236,12 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 2. Run the Diagnostic & Anomaly Discovery Pipeline
+### 2. Run the Diagnostic & Outlier Detection Pipeline
 
 ```bash
 python run_bpt.py
 ```
-*Executes the end-to-end pipeline in ~4 seconds: loads the tracked sample from `data/` (pass `--force-refresh` to re-query SkyServer), performs classical BPT classification, runs the tri-algorithmic anomaly ensemble, computes 95% confidence intervals, and outputs publication figures to `assets/`.*
+*Executes the end-to-end pipeline in ~4 seconds: loads the tracked sample from `data/` (pass `--force-refresh` to re-query SkyServer), performs classical BPT classification, runs the ensemble outlier detector, computes 95% confidence intervals, and outputs figures to `assets/`.*
 
 ### 3. Run Automated Tests
 
@@ -284,7 +255,7 @@ pytest -q
 
 ## Scientific References & Literature Attribution
 
-This project implements analytical boundaries, survey datasets, and observational findings from the following landmark literature:
+This project implements analytical boundaries, survey datasets, and observational findings from the following literature:
 
 1. **The BPT Diagnostic Foundation:**  
    Baldwin, J. A., Phillips, M. M., & Terlevich, R. (1981). *Classification parameters for the emission-line spectra of extragalactic objects.* **PASP**, 93, 5–19. [DOI: 10.1086/130766](https://doi.org/10.1086/130766)
@@ -293,21 +264,23 @@ This project implements analytical boundaries, survey datasets, and observationa
 3. **Extreme Starburst Theoretical Limit:**  
    Kewley, L. J., Dopita, M. A., Sutherland, R. S., et al. (2001). *Theoretical Modeling of Starburst Galaxies.* **ApJ**, 556(1), 121–140. [DOI: 10.1086/321545](https://doi.org/10.1086/321545)
 4. **AGN Host Galaxies & Multi-Line Diagnostics:**  
-   Kewley, L. J., Groves, B., Kauffmann, G., & Heckman, T. (2006). *The host galaxies and classification of active galactic nuclei.* **MNRAS**, 372(3), 961–976. [DOI: 10.1111/j.1365-2966.2006.10869.x](https://doi.org/10.1111/j.1365-2966.2006.10869.x)
+   Kewley, L. J., Groves, B., Kauffmann, G., & Heckman, T. (2006). *The host galaxies and classification of active galactic nuclei.* **MNRAS**, 372(3), 961–976. [DOI: 10.1111/j.1365-2966.2006.10859.x](https://doi.org/10.1111/j.1365-2966.2006.10859.x)
 5. **MPA-JHU Emission-Line Measurements:**  
    Brinchmann, J., Charlot, S., White, S. D. M., et al. (2004). *The physical properties of star-forming galaxies in the low-redshift Universe.* **MNRAS**, 351(4), 1151–1179. [DOI: 10.1111/j.1365-2966.2004.07881.x](https://doi.org/10.1111/j.1365-2966.2004.07881.x)
 6. **SDSS-IV Data Release 17:**  
-   Abdurro'uf, Accetta, K., Aerts, C., et al. (2022). *The Seventeenth Data Release of the Sloan Digital Sky Surveys: Complete Results from SDSS-IV.* **ApJS**, 259(2), 35. [DOI: 10.3847/1538-4365/ac4414](https://doi.org/10.3847/1538-4365/ac4414)
-7. **Nuclear Rejuvenation in Ring Galaxies (Candidate #1):**  
-   Martín-Navarro, I., Shankar, F., Mezcua, M., et al. (2022). *Rejuvenation triggers nuclear activity in nearby galaxies.* **MNRAS Letters**, 513(1), L10–L14. [DOI: 10.1093/mnrasl/slab112](https://doi.org/10.1093/mnrasl/slab112)
-8. **Nuclear Activity in Low-Power Radio Galaxies (Candidate #2):**  
-   Lin, Y.-T., Huang, S., & Reveilaud, C. (2018). *Origin of Nuclear Activity in Low-power Radio Galaxies.* **AJ**, 155(5), 188. [DOI: 10.3847/1538-3881/aab5b4](https://doi.org/10.3847/1538-3881/aab5b4)
-9. **The Quasar Feedback Survey (Candidate #3):**  
-   Molyneux, S. J., Calistro Rivera, G., De Breuck, C., et al. (2024). *The Quasar Feedback Survey: characterizing CO excitation in quasar host galaxies.* **MNRAS**, 527(3), 4420–4439. [DOI: 10.1093/mnras/stad3511](https://doi.org/10.1093/mnras/stad3511)
-10. **AGN SED Models and Dust Viewing Angles (Candidate #4):**  
-    Ramos Padilla, A. F., Wang, L., Małek, K., et al. (2022). *Viewing angle in AGN SED models.* **MNRAS**, 510(1), 687–703. [DOI: 10.1093/mnras/stab3440](https://doi.org/10.1093/mnras/stab3440)
-11. **Radio Sources in the Nearby Universe (Candidate #5):**  
-    Condon, J. J., Matthews, A. M., & Broderick, J. J. (2019/2022). *Radio Sources in the Nearby Universe.* **ApJ**, 872(2), 148. [DOI: 10.3847/1538-4357/aafd32](https://doi.org/10.3847/1538-4357/aafd32)
+   Abdurro'uf, Accetta, K., Aerts, C., et al. (2022). *The Seventeenth Data Release of the Sloan Digital Sky Surveys: Complete Release of MaNGA, MaStar, and APOGEE-2 Data.* **ApJS**, 259(2), 35. [DOI: 10.3847/1538-4365/ac4414](https://doi.org/10.3847/1538-4365/ac4414)
+7. **Palomar Survey Nuclear Emission Line Ratios (Anchor Galaxies):**  
+   Ho, L. C., Filippenko, A. V., & Sargent, W. L. W. (1997). *A Search for "Dwarf" Seyfert Nuclei. III. Spectroscopic Parameters and Properties of the Host Galaxies.* **ApJS**, 112(2), 315–390. [DOI: 10.1086/313041](https://doi.org/10.1086/313041)
+8. **AGN Feedback & [N II] Seyfert/LINER Demarcation:**  
+   Schawinski, K., Thomas, D., Sarzi, M., et al. (2007). *Observational evidence for AGN feedback in early-type galaxies.* **MNRAS**, 382(4), 1415–1431. [DOI: 10.1111/j.1365-2966.2007.12487.x](https://doi.org/10.1111/j.1365-2966.2007.12487.x)
+9. **Alternative Diagnostic Diagrams & WHAN Classification:**  
+   Cid Fernandes, R., Stasińska, G., Schlickmann, M. S., et al. (2010). *Alternative diagnostic diagrams and the 'forgotten' population of weak line galaxies in the SDSS.* **MNRAS**, 403(2), 1036–1053. [DOI: 10.1111/j.1365-2966.2009.16185.x](https://doi.org/10.1111/j.1365-2966.2009.16185.x)
+10. **Type 2 Quasar Selection (Candidate #1):**  
+    Reyes, R., Zakamska, N. L., Strauss, M. A., et al. (2008). *Space Density of Optically Selected Type 2 Quasars.* **AJ**, 136(6), 2373–2390. [DOI: 10.1088/0004-6256/136/6/2373](https://doi.org/10.1088/0004-6256/136/6/2373)
+11. **Low-Mass Black Holes in Active Galaxies (Candidate #7):**  
+    Greene, J. E., & Ho, L. C. (2007). *A New Sample of Low-Mass Black Holes in Active Galaxies.* **ApJ**, 670(1), 92–104. [DOI: 10.1086/522082](https://doi.org/10.1086/522082)
+12. **KPNO International Spectroscopic Survey (Candidate #8):**  
+    Salzer, J. J., Gronwall, C., Lipovetsky, V. A., et al. (2001). *The KPNO International Spectroscopic Survey. II. Hα-selected Survey List 1.* **AJ**, 121(1), 66–85. [DOI: 10.1086/318040](https://doi.org/10.1086/318040)
 
 Full BibTeX records are available in [`REFERENCES.bib`](REFERENCES.bib).
 
@@ -329,5 +302,5 @@ Full BibTeX records are available in [`REFERENCES.bib`](REFERENCES.bib).
 ## License & Academic Attribution Policy
 
 * **Code License:** [MIT License](LICENSE) © 2026 Aditya Bhadoria.
-* **Primary Scientific Attribution (Mandatory):** This repository is an educational reproduction and open-source demonstration. Any scientific publication, paper, or research work utilizing the BPT diagnostic, classification boundaries, or SDSS catalog **must primarily cite the original literature** listed in [Scientific References](#scientific-references--literature-attribution) and [`REFERENCES.bib`](REFERENCES.bib) (Baldwin et al. 1981; Kauffmann et al. 2003; Kewley et al. 2001, 2006; Brinchmann et al. 2004; Abdurro'uf et al. 2022).
-* **Software Implementation Citation (Optional):** If you specifically adapt or reuse this Python pipeline, code structure, or plotting workflow in an educational tutorial, university lab, or coding demo, you may additionally cite the software repository via [`CITATION.cff`](CITATION.cff) or GitHub's **"Cite this repository"** button.\n
+* **Primary Scientific Attribution (Requested):** This repository is an educational reproduction and open-source demonstration. Any scientific publication, paper, or research work utilizing the BPT diagnostic, classification boundaries, or SDSS catalog **should cite the original literature** listed in [Scientific References](#scientific-references--literature-attribution) and [`REFERENCES.bib`](REFERENCES.bib) (Baldwin et al. 1981; Kauffmann et al. 2003; Kewley et al. 2001, 2006; Brinchmann et al. 2004; Abdurro'uf et al. 2022).
+* **Software Implementation Citation (Optional):** If you specifically adapt or reuse this Python pipeline, code structure, or plotting workflow in an educational tutorial, university lab, or coding demo, you may additionally cite the software repository via [`CITATION.cff`](CITATION.cff) or GitHub's **"Cite this repository"** button.
