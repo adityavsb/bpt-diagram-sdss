@@ -272,6 +272,14 @@ python run_bpt.py
 ```
 *Executes the end-to-end pipeline in ~4 seconds: loads the tracked sample from `data/` (pass `--force-refresh` to re-query SkyServer), performs classical BPT classification, runs the tri-algorithmic anomaly ensemble, computes 95% confidence intervals, and outputs publication figures to `assets/`.*
 
+### 3. Run Automated Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+*Executes regression tests covering theoretical boundaries, BPT region classification, error propagation, confidence ellipses, and Mahalanobis boundary detachment.*
+
 ---
 
 ## Scientific References & Literature Attribution
