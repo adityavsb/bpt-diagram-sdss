@@ -184,6 +184,13 @@ def run_pipeline(
     physical_candidates[output_cols].to_csv(candidates_csv, index=False)
     print(f"\n[6] Saved Top {top_n_candidates} Physical Anomaly Candidates catalog -> {candidates_csv}")
 
+    # Optional SIMBAD Cross-Match (resolves coordinates against CDS/Harvard mirrors)
+    try:
+        from crossmatch import crossmatch_candidates
+        simbad_df = crossmatch_candidates(physical_candidates)
+    except Exception as e:
+        print(f"[Crossmatch] skipped: {e}")
+
     # 8. Print Top 20 Candidates Table
     print("\n" + "=" * 105)
     print(f"3. TOP {top_n_candidates} LINE-RATIO OUTLIER CANDIDATES (SDSS DR17)")
