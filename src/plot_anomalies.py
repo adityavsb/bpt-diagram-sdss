@@ -83,7 +83,7 @@ def plot_bpt_anomalies(
             gx, gy, xerr=gdx, yerr=gdy,
             fmt="x", color="#EF4444", ecolor="#EF4444", elinewidth=1.2,
             capsize=3, capthick=1.0, markersize=8, markeredgewidth=2.0,
-            alpha=0.75, label="Pipeline Glitches (Large 95% CI Error Jitter)",
+            alpha=0.75, label="High-fragility objects (large error ellipses)",
             zorder=4
         )
 
@@ -158,9 +158,7 @@ def plot_bpt_anomalies(
     ax.text(-0.15, 0.05, "COMPOSITE\n(Star + AGN)",
             color="#CBD5E1", fontsize=9, style="italic", alpha=0.75, ha="center")
     
-    # Anomaly discovery arrows/tags
-    ax.text(-1.15, 0.95, "▲ GREEN PEA / EELG\nCANDIDATES",
-            color="#FDE047", fontsize=9, fontweight="bold", ha="left")
+
 
     # 7. Axis formatting & bounds
     ax.set_xlim(-2.3, 0.8)
@@ -171,8 +169,8 @@ def plot_bpt_anomalies(
                   color="#F1F5F9", fontsize=13, labelpad=10)
     
     ax.set_title(
-        "SDSS DR17 Galaxy Diagnostics: Tri-Algorithmic Celestial Anomaly Detection\n"
-        r"Disentangling Physical Discoveries vs. Pipeline Glitches via 95% Confidence Intervals",
+        "SDSS (MPA-JHU) BPT plane: ensemble line-ratio outlier candidates\n"
+        "Isolation Forest + LOF + PCA residual, with 2-D 95% error ellipses",
         color="#F8FAFC", fontsize=14, fontweight="bold", pad=16
     )
 
@@ -193,10 +191,10 @@ def plot_bpt_anomalies(
         r"$\bf{Tri-Algorithmic\ Ensemble}$" + "\n"
         "• Isolation Forest + LOF + PCA Rec\n"
         "• Equal-Weighted Consensus Voting\n"
-        r"$\bf{Glitch\ Disentanglement}$" + "\n"
+        r"$\bf{Measurement\ Fragility}$" + "\n"
         "• Analytical Gaussian Error Propagation\n"
         r"• 2-D 95% error ellipses (2.45σ, χ²₂)" + "\n"
-        "• S/N Thresholding & Locus Overlap"
+        "• Fragility filter + seed/k stability"
     )
     ax.text(
         0.98, 0.03, info_text,
