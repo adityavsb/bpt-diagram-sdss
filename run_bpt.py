@@ -24,13 +24,20 @@ from plot_bpt import plot_bpt_diagram
 from glitch_filter import (
     compute_line_snr,
     compute_error_propagation,
-    compute_glitch_and_confidence_scores,
+    compute_fragility_and_outlier_scores,
+    compute_boundary_sigma_distance,
 )
 from anomaly_detector import (
     detect_anomalies_tri_ensemble,
     assign_physical_archetype,
 )
 from plot_anomalies import plot_bpt_anomalies
+
+# Candidate selection thresholds (reported verbatim in README)
+MAX_FRAGILITY = 0.25      # measurement_fragility <= this
+MIN_SNR = 10.0            # minimum rescaled S/N over the four lines
+MIN_VOTES = 2             # algorithms placing the object in their top 5%
+MIN_STABLE_RUNS_FRAC = 1.0  # fraction of stability runs with object in top-50
 
 def run_pipeline(
     sample_size=10000,
@@ -97,13 +104,12 @@ def run_pipeline(
     print("\n[4] Running Tri-Algorithmic Anomaly Ensemble (Isolation Forest + LOF + PCA Rec)...")
     anomaly_df = detect_anomalies_tri_ensemble(df, random_state=42)
     
-    # 7. Error Propagation & Glitch Disentanglement
+    # 7. Error Propagation & Fragility Disentanglement
     print("[5] Propagating line flux errors & calculating 95% Confidence Intervals...")
     snr_df = compute_line_snr(df)
     err_df = compute_error_propagation(df)
-    from glitch_filter import compute_boundary_sigma_distance
     bnd_df = compute_boundary_sigma_distance(df, err_df)
-    glitch_df = compute_glitch_and_confidence_scores(
+    fragility_df = compute_fragility_and_outlier_scores(
         df,
         anomaly_df["consensus_anomaly_score"].values,
         snr_df,
@@ -111,14 +117,14 @@ def run_pipeline(
     )
 
     # Merge results
-    df_merged = pd.concat([df, anomaly_df, snr_df, err_df, bnd_df, glitch_df], axis=1)
+    df_merged = pd.concat([df, anomaly_df, snr_df, err_df, bnd_df, fragility_df], axis=1)
 
     # Assign physical archetype
     df_merged["physical_archetype"] = assign_physical_archetype(
         df_merged["log_nii_ha"].values,
         df_merged["log_oiii_hb"].values,
-        df_merged["pipeline_glitch_risk"].values,
-        df_merged["physical_anomaly_confidence"].values
+        df_merged["measurement_fragility"].values,
+        df_merged["quality_weighted_outlier_score"].values
     )
 
     # Add interactive SkyServer and DESI Legacy Survey links
@@ -132,18 +138,30 @@ def run_pipeline(
     ]
 
     # Rank Candidates
-    # Top Physical: high physical_anomaly_confidence, low glitch risk (<= 50)
+    stability_cond = (
+        (df_merged["n_runs_in_top"] >= MIN_STABLE_RUNS_FRAC * df_merged["n_runs_total"])
+        if "n_runs_in_top" in df_merged.columns
+        else True
+    )
+    sel = (
+        (df_merged["measurement_fragility"] <= MAX_FRAGILITY)
+        & (df_merged["snr_min"] >= MIN_SNR)
+        & (df_merged["algorithm_votes"] >= MIN_VOTES)
+        & stability_cond
+    )
+    print(f"[Selection] {int(sel.sum()):,} objects pass fragility<= {MAX_FRAGILITY}, S/N>= {MIN_SNR}, "
+          f"votes>= {MIN_VOTES}")
     physical_candidates = (
-        df_merged[df_merged["pipeline_glitch_risk"] <= 50.0]
-        .sort_values(by="physical_anomaly_confidence", ascending=False)
+        df_merged[sel]
+        .sort_values(by="quality_weighted_outlier_score", ascending=False)
         .head(top_n_candidates)
         .copy()
     )
     physical_candidates["rank"] = range(1, len(physical_candidates) + 1)
 
-    # Control Glitches: high glitch risk (>= 60), high raw anomaly score (look anomalous purely due to noise)
+    # Control Glitches: high fragility (>= 0.65), high raw anomaly score (look anomalous purely due to noise)
     glitch_candidates = (
-        df_merged[df_merged["pipeline_glitch_risk"] >= 65.0]
+        df_merged[df_merged["measurement_fragility"] >= 0.65]
         .sort_values(by="consensus_anomaly_score", ascending=False)
         .head(10)
         .copy()
@@ -155,7 +173,7 @@ def run_pipeline(
         "log_nii_ha", "log_oiii_hb",
         "ci_95_nii_ha_str", "ci_95_oiii_hb_str",
         "consensus_anomaly_score", "algorithm_votes",
-        "physical_anomaly_confidence", "pipeline_glitch_risk",
+        "quality_weighted_outlier_score", "measurement_fragility",
         "snr_min", "n_sigma_nearest_boundary", "class_robust_3sigma",
         "physical_archetype", "skyserver_url", "legacy_survey_url"
     ]
@@ -165,9 +183,9 @@ def run_pipeline(
 
     # 8. Print Top 20 Candidates Table
     print("\n" + "=" * 105)
-    print(f"3. TOP {top_n_candidates} CONFIRMED PHYSICAL CELESTIAL ANOMALIES (SDSS DR17)")
+    print(f"3. TOP {top_n_candidates} LINE-RATIO OUTLIER CANDIDATES (SDSS DR17)")
     print("=" * 105)
-    header = f"{'Rank':<4} | {'SpecObjID':<19} | {'z':<6} | {'log([NII]/Hα)':<13} | {'log([OIII]/Hβ)':<14} | {'Votes':<5} | {'Score':<6} | {'PhysConf':<8} | {'Glitch%':<7} | {'Archetype':<26}"
+    header = f"{'Rank':<4} | {'SpecObjID':<19} | {'z':<6} | {'log([NII]/Hα)':<13} | {'log([OIII]/Hβ)':<14} | {'Votes':<5} | {'Score':<6} | {'QWScore':<8} | {'Fragil':<7} | {'Archetype':<26}"
     print(header)
     print("-" * 105)
     for _, row in physical_candidates.iterrows():
@@ -175,7 +193,7 @@ def run_pipeline(
             f"#{row['rank']:<3} | {row['specObjID']:<19} | {row['z']:<6.3f} | "
             f"{row['log_nii_ha']:<13.2f} | {row['log_oiii_hb']:<14.2f} | "
             f"{row['algorithm_votes']}/3   | {row['consensus_anomaly_score']:<6.1f} | "
-            f"{row['physical_anomaly_confidence']:<8.1f} | {row['pipeline_glitch_risk']:<7.1f} | "
+            f"{row['quality_weighted_outlier_score']:<8.1f} | {row['measurement_fragility']:<7.3f} | "
             f"{row['physical_archetype'][:26]:<26}"
         )
     print("=" * 105)

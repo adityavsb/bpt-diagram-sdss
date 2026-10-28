@@ -144,7 +144,7 @@ def assign_physical_archetype(
     """
     archetypes = []
     for x, y, gr, pc in zip(log_nii_ha, log_oiii_hb, glitch_risk, phys_conf):
-        if gr >= 75.0 and pc < 35.0:
+        if gr >= 0.75 and pc < 35.0:
             archetypes.append("Suspected Pipeline Glitch / Measurement Artifact")
         elif y >= 0.70 and x <= -0.70:
             archetypes.append("Extreme Green Pea / EELG Candidate")

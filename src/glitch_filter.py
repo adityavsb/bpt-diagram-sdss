@@ -86,20 +86,18 @@ def compute_error_propagation(df: pd.DataFrame) -> pd.DataFrame:
     res["ci_95_ellipse_area"] = np.pi * a_95 * b_95
     return res
 
-def compute_glitch_and_confidence_scores(
+def compute_fragility_and_outlier_scores(
     df: pd.DataFrame,
     consensus_anomaly_score: np.ndarray,
     snr_df: pd.DataFrame,
     err_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Computes two scaled scores (0 to 100):
-      1. pipeline_glitch_risk:
-         High probability (60-100) indicates the object's anomalous location is likely
-         an artifact of low SNR, high fractional line error, or a giant uncertainty ellipse.
-      2. physical_anomaly_confidence:
-         High probability (60-100) indicates high ML anomaly consensus backed by high SNR,
-         tight error bounds, and statistical robustness (>3 sigma detachment).
+    Both outputs are heuristics, not calibrated probabilities.
+    measurement_fragility in [0,1] rises toward 1 as the minimum line S/N approaches
+    the selection floor, as the 2-D error ellipse grows relative to the sample's 95th percentile,
+    and as Hbeta/[O III] S/N falls.
+    quality_weighted_outlier_score = consensus percentile x (1 - fragility).
     """
     snr_min = snr_df["snr_min"].values
     ellipse_area = err_df["ci_95_ellipse_area"].values
@@ -107,7 +105,7 @@ def compute_glitch_and_confidence_scores(
     # data-driven reference: the 95th percentile ellipse area in the sample
     AREA_REF = float(np.nanpercentile(ellipse_area, 95))
     
-    # --- 1. PIPELINE GLITCH RISK MODEL ---
+    # --- 1. MEASUREMENT FRAGILITY MODEL ---
     # a) SNR vulnerability factor: penalty near survey boundary S/N ~ 3.0
     # Sigmoidal-like dropoff from S/N = 3 (high risk) to S/N >= 12 (low risk)
     snr_risk = np.clip(1.0 - (snr_min - 3.0) / 10.0, 0.0, 1.0)
@@ -119,33 +117,19 @@ def compute_glitch_and_confidence_scores(
     faint_line_snr = np.minimum(snr_df["snr_hb"].values, snr_df["snr_oiii"].values)
     faint_risk = np.clip(1.0 - (faint_line_snr - 3.0) / 8.0, 0.0, 1.0)
     
-    # Weighted composite glitch risk (0 - 100)
+    # Weighted composite fragility (0 - 1)
     raw_glitch_risk = 0.45 * snr_risk + 0.35 * area_risk + 0.20 * faint_risk
-    # Scale from 0 to 100
-    pipeline_glitch_risk = np.clip(raw_glitch_risk * 100.0, 0.0, 100.0)
     
-    # --- 2. PHYSICAL ANOMALY CONFIDENCE MODEL ---
-    # Requires:
-    # 1. High consensus anomaly score (0-100)
-    # 2. High SNR across all lines (min SNR / 12 saturated at 1.0)
-    # 3. Small error ellipse (position is sharp, not drifting)
-    # 4. Low pipeline glitch risk
-    snr_quality_factor = np.clip(snr_min / 12.0, 0.2, 1.0)
-    sharpness_factor = np.clip(1.0 - (ellipse_area / (1.2 * AREA_REF)), 0.1, 1.0)
-    non_glitch_factor = (100.0 - pipeline_glitch_risk) / 100.0
-    
-    # Base confidence: product of consensus anomaly score and observational quality factors
-    raw_physical_conf = (
-        consensus_anomaly_score * 
-        (non_glitch_factor ** 1.2) * 
-        (snr_quality_factor ** 0.5) * 
-        sharpness_factor
-    )
-    physical_anomaly_confidence = np.clip(raw_physical_conf, 0.0, 100.0)
-    
+    # --- 2. QUALITY-WEIGHTED OUTLIER SCORE ---
+    # The consensus percentile, discounted by measurement fragility. No further
+    # S/N factors: fragility already encodes S/N and ellipse size, and brightness
+    # must not be rewarded twice.
+    measurement_fragility = raw_glitch_risk  # 0..1
+    quality_weighted = consensus_anomaly_score * (1.0 - measurement_fragility)
+
     res = pd.DataFrame(index=df.index)
-    res["pipeline_glitch_risk"] = np.round(pipeline_glitch_risk, 1)
-    res["physical_anomaly_confidence"] = np.round(physical_anomaly_confidence, 1)
+    res["measurement_fragility"] = np.round(measurement_fragility, 3)        # 0..1, heuristic
+    res["quality_weighted_outlier_score"] = np.round(quality_weighted, 2)     # 0..100, rank-based
     return res
 
 def compute_boundary_sigma_distance(df: pd.DataFrame, err_df: pd.DataFrame, n_grid: int = 4000) -> pd.DataFrame:
