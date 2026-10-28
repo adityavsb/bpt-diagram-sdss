@@ -1,1 +1,5 @@
-pytest>=8.0.0
+# Development and testing dependencies
+pytest==9.2.0
+iniconfig==2.3.1
+pluggy==1.7.0
+Pygments==2.21.0
