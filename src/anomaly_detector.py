@@ -13,37 +13,39 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
 
-def extract_anomaly_features(df: pd.DataFrame) -> np.ndarray:
+FEATURE_NAMES = ["log_nii_ha", "log_oiii_hb", "log_balmer_decrement", "log_ew_ha"]
+
+def extract_anomaly_features(df: pd.DataFrame):
     """
-    Constructs a standardized feature representation from emission line diagnostics:
-    - BPT coordinates: log([N II]/Hα), log([O III]/Hβ)
-    - Dust extinction tracker: log(Hα / Hβ) [Balmer decrement]
-    - Forbidden line ratio: log([O III] / [N II])
-    - Log line luminosities / fluxes for dynamic range
+    Distance- and luminosity-independent feature set (4 features, full rank):
+      1. log10([N II] 6584 / Halpha)        - BPT x
+      2. log10([O III] 5007 / Hbeta)        - BPT y
+      3. log10(Halpha / Hbeta)              - Balmer decrement (dust / case-B deviation)
+      4. log10(EW(Halpha) / Angstrom)       - WHAN-style ionisation strength
+                                              (MPA-JHU stores emission EW as negative)
+    Absolute fluxes are deliberately excluded: in a flux-limited survey they
+    track distance and luminosity, not emission-line physics.
+
+    Returns (X_scaled, X_raw, scaler).
     """
-    ha = np.maximum(df["h_alpha_flux"].values, 1e-4)
-    hb = np.maximum(df["h_beta_flux"].values, 1e-4)
-    oiii = np.maximum(df["oiii_5007_flux"].values, 1e-4)
-    nii = np.maximum(df["nii_6584_flux"].values, 1e-4)
-    
-    log_nii_ha = df["log_nii_ha"].values
-    log_oiii_hb = df["log_oiii_hb"].values
-    log_balmer = np.log10(ha / hb)
-    log_oiii_nii = np.log10(oiii / nii)
-    log_ha = np.log10(ha)
-    log_oiii = np.log10(oiii)
-    
-    features = np.column_stack([
-        log_nii_ha,
-        log_oiii_hb,
-        log_balmer,
-        log_oiii_nii,
-        log_ha,
-        log_oiii
+    ha = df["h_alpha_flux"].values
+    hb = df["h_beta_flux"].values
+    ew_ha = -df["h_alpha_eqw"].values  # emission is negative in MPA-JHU
+    n_clipped = int((ew_ha <= 0.1).sum())
+    if n_clipped:
+        print(f"[Features] {n_clipped} objects have EW(Halpha) <= 0.1 A; clipped to 0.1 A.")
+    ew_ha = np.maximum(ew_ha, 0.1)
+
+    X_raw = np.column_stack([
+        df["log_nii_ha"].values,
+        df["log_oiii_hb"].values,
+        np.log10(ha / hb),
+        np.log10(ew_ha),
     ])
-    
     scaler = RobustScaler()
-    return scaler.fit_transform(features)
+    X = scaler.fit_transform(X_raw)
+    assert np.linalg.matrix_rank(X) == X.shape[1], "feature matrix is rank-deficient"
+    return X, X_raw, scaler
 
 def to_percentile_score(raw_scores: np.ndarray) -> np.ndarray:
     """
@@ -64,7 +66,7 @@ def detect_anomalies_tri_ensemble(df: pd.DataFrame, random_state: int = 42) -> p
     equal-weighted consensus anomaly score, algorithm vote count (0 to 3),
     and astrophysical archetype classification.
     """
-    X = extract_anomaly_features(df)
+    X, X_raw, scaler = extract_anomaly_features(df)
     n_samples = len(df)
     
     # --- Algorithm 1: Isolation Forest ---
