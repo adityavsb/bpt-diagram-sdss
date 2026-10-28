@@ -115,19 +115,17 @@ bpt-diagram-sdss/
 |   \-- bpt_anomalies_sdss.png  # Anomaly detection & 95% CI error ellipses
 +-- data/
 |   +-- sdss_bpt_sample.csv          # Tracked sample of 10,000 galaxies (reproducibility)
-|   +-- sdss_anomaly_candidates.csv  # Ranked Top 20 physical celestial candidates
+|   +-- sdss_anomaly_candidates.csv  # Outlier candidates for follow-up (high ML consensus, low fragility)
 |   +-- classifier_validation.csv    # Cross-tabulation vs. official MPA-JHU bptclass (100% agreement)
 |   \-- anchor_galaxies.json         # Palomar HFS97 nuclear emission line ratios
-\-- run_bpt.py              # Master pipeline runner (Classical BPT + Anomaly Discovery)
+\-- run_bpt.py              # Master pipeline runner (Classical BPT + Outlier Detection)
 ```
 
 ---
 
-## Iteration 2: Tri-Algorithmic Celestial Anomaly Detection & Glitch Disentanglement
+## Iteration 2: Ensemble line-ratio outlier detection
 
-While classical demarcation curves partition galaxies into deterministic boxes (*Star-Forming, Composite, AGN*), real-world survey astronomy makes breakthrough discoveries (e.g. **Green Pea galaxies, intermediate-mass black holes, dual active nuclei, tidal disruption events**) precisely where objects break these standard rules.
-
-Iteration 2 implements an unsupervised machine learning discovery engine to uncover the **Top Celestial Outliers** across the 10,000 SDSS galaxies.
+Classical demarcation curves partition the diagram; objects far from the bulk population in line-ratio space are worth a second look, whether because of unusual physics or because of measurement problems. Iteration 2 ranks objects by how unusual their *line ratios* are, using three unsupervised detectors on four distance-independent features: $\log([\text{N II}]/\text{H}\alpha)$, $\log([\text{O III}]/\text{H}\beta)$, $\log(\text{H}\alpha/\text{H}\beta)$ and $\log \text{EW}(\text{H}\alpha)$. Absolute fluxes are excluded on purpose. The output is a **candidate list for follow-up**, not a list of discoveries.
 
 ![SDSS DR17 BPT Anomaly Detection](assets/bpt_anomalies_sdss.png)
 
@@ -135,8 +133,8 @@ Iteration 2 implements an unsupervised machine learning discovery engine to unco
 
 To eliminate single-algorithm bias, we employ an equal-weighted consensus ensemble across three complementary unsupervised paradigms:
 1. **Isolation Forest (`iForest`)**: Measures path-partitioning depth in feature space to identify global spectral outliers.
-2. **Local Outlier Factor (`LOF`, k=35)**: Density-ratio metric that uncovers objects lingering in the low-density "composite desert" between the starburst locus and the AGN plume.
-3. **PCA Reconstruction Residuals (`PCA-Rec`)**: Projects the multi-line emission space onto principal components; galaxies with high L2 reconstruction error exhibit unusual ionization physics unexplained by standard stellar/AGN models.
+2. **Local Outlier Factor (`LOF`, k = 35; k = 20 and 50 used for the stability check)**: Density ratio relative to the k nearest neighbours in feature space.
+3. **PCA reconstruction residual** (components chosen to explain ≥ 90% of variance; see console output): Distance from the low-dimensional manifold traced by the bulk population.
 
 Each raw score is calibrated to a percentile scale ($0\text{--}100$). The **Consensus Anomaly Score** is their equal-weighted average:
 
@@ -144,11 +142,11 @@ $$
 S_{\text{consensus}} = \frac{1}{3} S_{\text{iForest}} + \frac{1}{3} S_{\text{LOF}} + \frac{1}{3} S_{\text{PCA}}
 $$
 
-### 2. Disentangling Physical Anomalies vs. Pipeline Glitches
+### 2. Measurement fragility and uncertainty
 
 In survey astronomy, the raw top outliers of any unsupervised algorithm are often **data artifacts** (e.g., cosmic ray hits, sky subtraction residuals, or faint-line flux denominators approaching zero).
 
-To ensure candidates are scientifically genuine, we implement:
+To evaluate how sensitive each outlier is to measurement uncertainty, we implement:
 * **Analytical Gaussian Error Propagation:**
 
 $$
@@ -156,25 +154,27 @@ $$
 $$
 
 * **Uncertainty geometry:** 1-D marginal 95% intervals are $x \pm 1.96\,\sigma_x$, $y \pm 1.96\,\sigma_y$ (the `[lo, hi]` strings in the table). The plotted 2-D 95% error ellipses use semi-axes $2.448\,\sigma_x$, $2.448\,\sigma_y$ ($\sqrt{\chi^2_{2}(0.95)}$); a 1.96σ box would enclose only ~85% of a 2-D Gaussian. Errors in the two ratios are treated as uncorrelated (the MPA-JHU fits share a Balmer and a forbidden-line width, so this is an approximation).
+* **`measurement_fragility` (0–1, heuristic):** rises toward 1 as the minimum rescaled line S/N approaches the selection floor, as the 2-D error ellipse grows relative to the sample's 95th-percentile ellipse, and as Hβ/[O III] S/N falls. It is not a probability.
+* **`quality_weighted_outlier_score` (0–100):** consensus percentile × (1 − fragility).
+* **`n_sigma_nearest_boundary`:** distance, in units of the object's own σ, to the nearest demarcation curve. Objects with ≥ 3 keep their class under a 3σ fluctuation.
+* **Stability:** the ensemble is re-run for 5 Isolation Forest seeds × 3 LOF neighbourhood sizes; a candidate must be in the top 50 in every run.
 
-* **`pipeline_glitch_risk` (0–100%):** Flags objects whose outlier status is fragile to measurement noise (S/N approaching 3.0 or giant error ellipse area).
-* **`physical_anomaly_confidence` (0–100%):** Confirms high ML consensus backed by high signal-to-noise (S/N >> 10), compact error ellipses, and statistical detachment (>3σ) from standard tracks.
+### 3. Top outlier candidates for follow-up
 
-### 3. Top Confirmed Physical Celestial Candidates
+Selection: `measurement_fragility <= 0.25`, minimum rescaled S/N >= 10, >= 2 of 3 algorithm votes, stable in 15/15 runs; ranked by `quality_weighted_outlier_score`. These are statistically unusual line-ratio combinations; none has been confirmed as physically unusual by this project.
 
-Filtered for validated low glitch risk (`pipeline_glitch_risk` <= 0.5%, min S/N >= 40), the top candidates exhibit undeniable physical oddities:
+| Rank | SpecObjID | z | log([N II]/Hα) | log([O III]/Hβ) | 1-D 95% CI | Consensus | QW score | Fragility | n_σ boundary | BPT region | Driving feature | Links |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- | :--- | :--- |
+| **#1** | `1522331895189235712` | `0.235` | `-0.17` | `+0.93` | `[-0.20, -0.14]`, `[0.89, 0.96]` | `99.6` | **`99.0`** | `0.007` | `30.8σ` | AGN region, very high [O III]/Hbeta (y >= 0.9) | `log_oiii_hb` (z=+2.35) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1522331895189235712) • [Legacy](https://www.legacysurvey.org/viewer?ra=225.57194&dec=38.05195&layer=ls-dr10&zoom=15) |
+| **#2** | `2237320683103217664` | `0.033` | `-1.58` | `+0.61` | `[-1.64, -1.52]`, `[0.59, 0.63]` | `98.5` | **`97.6`** | `0.009` | `22.0σ` | Very low [N II]/Halpha (metal-poor-like ratios; unconfirmed) | `log_nii_ha` (z=+4.75) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2237320683103217664) • [Legacy](https://www.legacysurvey.org/viewer?ra=192.81909&dec=35.11345&layer=ls-dr10&zoom=15) |
+| **#3** | `2293593682860861440` | `0.230` | `-0.97` | `+0.52` | `[-1.00, -0.93]`, `[0.51, 0.54]` | `97.5` | **`97.1`** | `0.004` | `12.2σ` | Star-forming region | `log_ew_ha` (z=+3.12) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2293593682860861440) • [Legacy](https://www.legacysurvey.org/viewer?ra=170.60098&dec=37.76703&layer=ls-dr10&zoom=15) |
+| **#4** | `1432306634738132992` | `0.176` | `-0.35` | `+0.17` | `[-0.37, -0.33]`, `[0.13, 0.20]` | `97.5` | **`97.0`** | `0.005` | `11.1σ` | Composite region | `log_ew_ha` (z=+2.31) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1432306634738132992) • [Legacy](https://www.legacysurvey.org/viewer?ra=137.25270&dec=33.43255&layer=ls-dr10&zoom=15) |
+| **#5** | `1679928197229078528` | `0.039` | `-0.65` | `+0.16` | `[-0.72, -0.58]`, `[0.09, 0.23]` | `97.6` | **`94.1`** | `0.036` | `4.1σ` | Star-forming region | `log_ew_ha` (z=+1.99) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=1679928197229078528) • [Legacy](https://www.legacysurvey.org/viewer?ra=4.00171&dec=-0.30269&layer=ls-dr10&zoom=15) |
+| **#6** | `2247426838710216704` | `0.035` | `-1.71` | `+0.66` | `[-1.78, -1.63]`, `[0.64, 0.68]` | `99.5` | **`91.1`** | `0.085` | `18.6σ` | Very low [N II]/Halpha (metal-poor-like ratios; unconfirmed) | `log_nii_ha` (z=+5.29) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2247426838710216704) • [Legacy](https://www.legacysurvey.org/viewer?ra=171.18009&dec=39.76517&layer=ls-dr10&zoom=15) |
+| **#7** | `512391142269020160` | `0.031` | `-0.62` | `+0.86` | `[-0.70, -0.53]`, `[0.78, 0.94]` | `97.7` | **`85.0`** | `0.130` | `5.2σ` | Outlier at ordinary BPT position | `log_oiii_hb` (z=+2.21) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=512391142269020160) • [Legacy](https://www.legacysurvey.org/viewer?ra=38.29496&dec=-7.80372&layer=ls-dr10&zoom=15) |
+| **#8** | `2518725292126660608` | `0.051` | `-0.35` | `-0.82` | `[-0.38, -0.33]`, `[-0.91, -0.74]` | `96.9` | **`80.8`** | `0.166` | `8.2σ` | Star-forming region | `log_oiii_hb` (z=+1.29) | [SDSS](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=2518725292126660608) • [Legacy](https://www.legacysurvey.org/viewer?ra=188.59066&dec=29.65590&layer=ls-dr10&zoom=15) |
 
-| Rank | SpecObjID | z | log([N II]/H-alpha) | log([O III]/H-beta) | 95% CI Range | Consensus Score | Phys. Conf. | Physical Archetype | Optical Sky Links |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- | :--- |
-| **#1** | `315265744856180736` | `0.029` | `-0.10` | `+0.84` | `[-0.11, -0.09]`, `[+0.82, +0.86]` | `99.2` | **`99.0%`** | Unconventional Emission Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=315265744856180736) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=171.03603&dec=-1.15776&layer=ls-dr10&zoom=15) |
-| **#2** | `350255779153995776` | `0.061` | `-0.17` | `+1.13` | `[-0.18, -0.16]`, `[+1.11, +1.14]` | `99.4` | **`99.0%`** | Ultra-High Ionization Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=350255779153995776) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=226.97660&dec=1.13799&layer=ls-dr10&zoom=15) |
-| **#3** | `305239577747023872` | `0.116` | `-0.34` | `+1.00` | `[-0.35, -0.33]`, `[+0.99, +1.02]` | `99.2` | **`98.9%`** | Ultra-High Ionization Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=305239577747023872) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=154.22425&dec=0.48254&layer=ls-dr10&zoom=15) |
-| **#4** | `352546336886777856` | `0.051` | `-0.10` | `+0.98` | `[-0.11, -0.09]`, `[+0.96, +1.00]` | `99.1` | **`98.8%`** | Ultra-High Ionization Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=352546336886777856) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=231.65696&dec=0.59264&layer=ls-dr10&zoom=15) |
-| **#5** | `340022899698067456` | `0.025` | `-0.25` | `-0.38` | `[-0.26, -0.24]`, `[-0.40, -0.35]` | `98.9` | **`98.6%`** | Unconventional Emission Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=340022899698067456) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=212.61180&dec=-0.83238&layer=ls-dr10&zoom=15) |
-| **#9** | `301908877954279424` | `0.032` | `-0.23` | `+0.20` | `[-0.23, -0.22]`, `[+0.19, +0.22]` | `98.1` | **`98.0%`** | Transition Composite / Intermediate Outlier | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=301908877954279424) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=150.03499&dec=0.98479&layer=ls-dr10&zoom=15) |
-| **#10** | `341263147589462016` | `0.053` | `+0.01` | `+0.93` | `[-0.00, +0.02]`, `[+0.91, +0.95]` | `98.2` | **`97.8%`** | Extreme Seyfert / Fast Accretion Outflow | [SDSS Explore](http://skyserver.sdss.org/dr17/en/tools/explore/summary.aspx?sid=341263147589462016) • [DESI Legacy](https://www.legacysurvey.org/viewer?ra=213.24683&dec=0.92118&layer=ls-dr10&zoom=15) |
-
-*Full 20-candidate catalog exported with complete coordinates and multi-wavelength links in [`data/sdss_anomaly_candidates.csv`](data/sdss_anomaly_candidates.csv).*
+*Full candidate catalog exported with complete coordinates and multi-wavelength links in [`data/sdss_anomaly_candidates.csv`](data/sdss_anomaly_candidates.csv).*
 
 ---
 
