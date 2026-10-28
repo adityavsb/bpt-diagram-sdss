@@ -81,6 +81,8 @@ Selection: `class = GALAXY`, `zWarning = 0`, `sciencePrimary = 1`, MPA-JHU `reli
 
 Cross-tabulating our classification against the official MPA-JHU `bptclass` column (`galSpecExtra`) across the 10,000 galaxies yields 100.0% agreement (7,344 Star-Forming, 1,783 Composite, 873 AGN; see `data/classifier_validation.csv`).
 
+To verify that my implementation of the classical Kewley et al. (2001) and Kauffmann et al. (2003) demarcation equations was numerically sound, I cross-validated the entire 10,000-galaxy sample against the official MPA-JHU `bptclass` catalog flags. Achieving 100.0% classification agreement across all 7,344 Star-Forming, 1,783 Composite, and 873 AGN galaxies verified that applying standard Balmer/forbidden width groupings and recommended S/N thresholds exactly reproduces the standard astronomical catalog benchmark.
+
 ![BPT Diagnostic Diagram](assets/bpt_diagnostic_sdss.png)
 
 ---
@@ -172,6 +174,8 @@ $$
 
 Evaluating the ensemble across 15 runs (5 Isolation Forest seeds × 3 LOF neighbourhood sizes $k \in \{20, 35, 50\}$) yields a mean pairwise Spearman correlation of 0.990 and mean top-50 Jaccard overlap of 0.893 (see `data/anomaly_stability.csv`). 42 galaxies appear in the top 50 in all 15 runs.
 
+Unsupervised outlier detectors can often be brittle, easily perturbed by random tree partitions or neighborhood parameter choices. By testing the ensemble across 15 independent runs (varying Isolation Forest random seeds and LOF $k$-neighborhoods), I verified that the consensus ranking is highly consistent (mean Spearman rank correlation of 0.990, top-50 Jaccard overlap of 0.893). Exactly 42 galaxies remained in the top 50 across every single run, allowing me to filter out fragile borderline cases and retain only the 8 candidates that meet strict stability and physical signal-to-noise criteria.
+
 ### 3. Top outlier candidates for follow-up
 
 Selection: `measurement_fragility <= 0.25`, minimum rescaled S/N >= 10, >= 2 of 3 algorithm votes, stable in 15/15 runs; ranked by `quality_weighted_outlier_score`. These are statistically unusual line-ratio combinations; none has been verified as physically unusual by this project.
@@ -216,6 +220,16 @@ The table below is generated from `data/sdss_anomaly_candidates_simbad.csv` (5�
 * **Validation performed:** agreement with the MPA-JHU `bptclass` column (`data/classifier_validation.csv`); seed/neighbourhood stability of the outlier ranking (`data/anomaly_stability.csv`); SIMBAD cross-match of candidates (`data/sdss_anomaly_candidates_simbad.csv`); unit tests (`pytest`).
 * **Literature statements** about individual candidates are limited to papers that SIMBAD associates with the object and that discuss it individually; see §What SIMBAD says about the top candidates.
 * **Working notes:** See [`NOTES.md`](NOTES.md) for dated notes on design decisions, corrections, and dropped candidates.
+
+---
+
+## What I learned
+
+Developing this pipeline and conducting a thorough code and methodology audit challenged several of my initial assumptions about machine learning in observational astronomy:
+
+1. **Unsupervised ML without domain constraints optimizes for catalog artifacts:** In my first iteration, I tried to leverage machine learning by feeding the models as much data as possible—including raw emission-line fluxes alongside line ratios. Even though "garbage in, garbage out" is a standard rule, I assumed tree partitions and distance metrics would naturally handle the multiple dimensions. Instead, the models took the path of least resistance: they voted for the brightest objects in the catalog with extreme, uncalibrated raw fluxes ($> 10^9$) and local coordinates, flagging bright lightbulbs rather than exotic astrophysics. Permanently adopting a 4D scale-invariant feature space (ratios, Balmer decrement, and equivalent width) was essential to ground the detector in intrinsic gas thermodynamics.
+2. **The danger of confirmation bias driven by Malmquist bias:** When my initial candidates were cross-referenced against NED and SIMBAD, finding dozens of papers discussing radio cores and starbursts gave me false confidence that the algorithm was pursuing the right direction. In reality, those objects had extensive literature simply because they were historically prominent, bright targets (astronomical Malmquist bias); on the BPT diagram, their line ratios sat squarely inside the ordinary composite cloud. True validation requires inspecting feature attributions and stability metrics, not celebrating search hits on famous galaxies.
+3. **Statistical geometry in multi-dimensional astronomy:** When plotting 2-D error ellipses, I initially used a $1.96\sigma$ radius—a common mistake carried over from 1-D normal distributions. In a 2-D joint Gaussian distribution, the squared distance follows a $\chi^2_2$ distribution, where $1.96\sigma$ encloses only ~85% of the probability. Adjusting the ellipse multiplier to $\sqrt{\chi^2_2(0.95)} \approx 2.448\sigma$ is critical to avoid classifying 15% of ordinary galaxies as false outliers due to measurement noise.
 
 ---
 
