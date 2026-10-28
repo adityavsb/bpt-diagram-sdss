@@ -147,3 +147,52 @@ def compute_glitch_and_confidence_scores(
     res["pipeline_glitch_risk"] = np.round(pipeline_glitch_risk, 1)
     res["physical_anomaly_confidence"] = np.round(physical_anomaly_confidence, 1)
     return res
+
+def compute_boundary_sigma_distance(df: pd.DataFrame, err_df: pd.DataFrame, n_grid: int = 4000) -> pd.DataFrame:
+    """
+    Minimum Mahalanobis-like distance (in sigma units, uncorrelated errors) from
+    each object to the Kauffmann+03 and Kewley+01 demarcation curves:
+        d^2 = ((x - xc)/sigma_x)^2 + ((y - yc)/sigma_y)^2, minimised over curve points.
+    An object with n_sigma_nearest_boundary >= 3 cannot be moved across the
+    nearest classification boundary by a 3-sigma fluctuation of its line ratios.
+    This is the quantity the README calls "detachment from standard tracks".
+    """
+    from bpt_math import kauffmann_boundary, kewley_boundary
+
+    xg_k03 = np.linspace(-3.0, 0.05 - 1e-4, n_grid)
+    yg_k03 = kauffmann_boundary(xg_k03)
+    xg_k01 = np.linspace(-3.0, 0.47 - 1e-4, n_grid)
+    yg_k01 = kewley_boundary(xg_k01)
+    # restrict to the plotted dynamic range so the asymptote does not dominate
+    keep03 = np.isfinite(yg_k03) & (yg_k03 > -3) & (yg_k03 < 3)
+    keep01 = np.isfinite(yg_k01) & (yg_k01 > -3) & (yg_k01 < 3)
+    xg_k03, yg_k03 = xg_k03[keep03], yg_k03[keep03]
+    xg_k01, yg_k01 = xg_k01[keep01], yg_k01[keep01]
+
+    x = df["log_nii_ha"].values[:, None]
+    y = df["log_oiii_hb"].values[:, None]
+    sx = err_df["sigma_log_nii_ha"].values[:, None]
+    sy = err_df["sigma_log_oiii_hb"].values[:, None]
+
+    chunk_size = 2000
+    d03_list, d01_list = [], []
+    for i in range(0, len(df), chunk_size):
+        xc = x[i : i + chunk_size]
+        yc = y[i : i + chunk_size]
+        sxc = sx[i : i + chunk_size]
+        syc = sy[i : i + chunk_size]
+        d03_chunk = np.sqrt(np.min(((xc - xg_k03) / sxc) ** 2 + ((yc - yg_k03) / syc) ** 2, axis=1))
+        d01_chunk = np.sqrt(np.min(((xc - xg_k01) / sxc) ** 2 + ((yc - yg_k01) / syc) ** 2, axis=1))
+        d03_list.append(d03_chunk)
+        d01_list.append(d01_chunk)
+
+    d03 = np.concatenate(d03_list)
+    d01 = np.concatenate(d01_list)
+
+    res = pd.DataFrame(index=df.index)
+    res["n_sigma_kauffmann"] = d03
+    res["n_sigma_kewley"] = d01
+    res["n_sigma_nearest_boundary"] = np.minimum(d03, d01)
+    res["class_robust_3sigma"] = res["n_sigma_nearest_boundary"] >= 3.0
+    return res
+

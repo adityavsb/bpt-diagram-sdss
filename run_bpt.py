@@ -101,6 +101,8 @@ def run_pipeline(
     print("[5] Propagating line flux errors & calculating 95% Confidence Intervals...")
     snr_df = compute_line_snr(df)
     err_df = compute_error_propagation(df)
+    from glitch_filter import compute_boundary_sigma_distance
+    bnd_df = compute_boundary_sigma_distance(df, err_df)
     glitch_df = compute_glitch_and_confidence_scores(
         df,
         anomaly_df["consensus_anomaly_score"].values,
@@ -109,7 +111,7 @@ def run_pipeline(
     )
 
     # Merge results
-    df_merged = pd.concat([df, anomaly_df, snr_df, err_df, glitch_df], axis=1)
+    df_merged = pd.concat([df, anomaly_df, snr_df, err_df, bnd_df, glitch_df], axis=1)
 
     # Assign physical archetype
     df_merged["physical_archetype"] = assign_physical_archetype(
@@ -154,7 +156,8 @@ def run_pipeline(
         "ci_95_nii_ha_str", "ci_95_oiii_hb_str",
         "consensus_anomaly_score", "algorithm_votes",
         "physical_anomaly_confidence", "pipeline_glitch_risk",
-        "snr_min", "physical_archetype", "skyserver_url", "legacy_survey_url"
+        "snr_min", "n_sigma_nearest_boundary", "class_robust_3sigma",
+        "physical_archetype", "skyserver_url", "legacy_survey_url"
     ]
     os.makedirs(os.path.dirname(candidates_csv), exist_ok=True)
     physical_candidates[output_cols].to_csv(candidates_csv, index=False)
