@@ -117,7 +117,12 @@ bpt-diagram-sdss/
 |   +-- glitch_filter.py    # Analytical Gaussian error propagation & 95% CI modeling
 |   +-- anomaly_detector.py # Ensemble outlier detector (iForest + LOF + PCA) & stability
 |   +-- crossmatch.py       # Automated SIMBAD cross-match resolver via astroquery
-|   \-- plot_anomalies.py   # Anomaly diagnostic map with 2-D error ellipses
+|   +-- plot_anomalies.py   # Anomaly diagnostic map with 2-D error ellipses
+|   +-- deep_dive_data.py   # Cached archive fetchers for the single-object deep dive
+|   \-- deep_dive_physics.py # Dust correction, direct-Te abundances, joint line fitter
++-- notebooks/
+|   +-- 01_feature_ablation.ipynb      # Flux vs. ratio feature ablation
+|   \-- 02_deep_dive_LEDA4572013.ipynb # Single-object deep dive on candidate #2
 +-- assets/
 |   +-- bpt_diagnostic_sdss.png # Classical BPT diagram
 |   \-- bpt_anomalies_sdss.png  # Outlier detection diagnostic map
@@ -310,6 +315,12 @@ Full BibTeX records are available in [`REFERENCES.bib`](REFERENCES.bib).
 
 3. **CDS SIMBAD Astronomical Database:**  
    This research has made use of the SIMBAD database, operated at CDS, Strasbourg, France.
+
+4. **VizieR and the catalogues used in the deep-dive notebook:**  
+   This research has made use of the VizieR catalogue access tool, CDS, Strasbourg, France. The deep-dive notebook uses the ALFALFA H I source catalog (Haynes et al. 2018), the AllWISE Data Release (Cutri et al. 2013) and the GALEX GUVcat (Bianchi et al. 2017) through VizieR.
+
+5. **DESI Legacy Imaging Surveys:**  
+   Image cutouts shown in the deep-dive notebook come from the Legacy Surveys viewer; see the acknowledgement requirements at legacysurvey.org.
 
 ---
 
