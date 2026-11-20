@@ -3,3 +3,8 @@ pytest==9.2.0
 iniconfig==2.3.1
 pluggy==1.7.0
 Pygments==2.21.0
+# Notebooks (notebooks/02_deep_dive_LEDA4572013.ipynb); top-level packages only
+jupyterlab==4.6.6
+ipykernel==7.4.0
+nbconvert==7.17.2
+nbformat==5.11.1
